@@ -203,7 +203,7 @@
     // Game state
     let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, obstacles, boosts;
     let upgradePending = false;
-    let carSpeed = 1, carSize = 1, shield = false, boostActive = false, boostTimeLeft = 0;
+    let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
     let upgradeEvery = 10, lastUpgradeAt = 0;
 
     // Wheel and car body helpers
@@ -307,7 +307,7 @@
         if (!gameRunning) return;
 
         // Move track lane lines to create illusion of motion
-lineOffset += enemySpeed;
+lineOffset += carSpeed;
 track.style.backgroundPositionY = lineOffset + 'px';
         if (lineOffset > 48) lineOffset = 0; // 48 is the repeat distance in your gradient
         
@@ -347,7 +347,7 @@ track.style.backgroundPositionY = lineOffset + 'px';
 
         // Move obstacles
         obstacles.forEach(obs => {
-            obs.y += enemySpeed;
+            obs.y += carSpeed;
             obs.el.style.top = obs.y + 'px';
         });
         obstacles = obstacles.filter(obs=>{
@@ -360,7 +360,7 @@ track.style.backgroundPositionY = lineOffset + 'px';
 
         // Move boosts
         boosts.forEach(bst => {
-            bst.y += enemySpeed;
+            bst.y += carSpeed;
             bst.el.style.top = bst.y + 'px';
         });
         boosts = boosts.filter(bst=>{
