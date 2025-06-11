@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Race Game with Obstacles, Boosts, and Upgrades</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin: 0; background: #333; color: #fff; font-family: Arial, sans-serif; }
+        #game-container {
+            max-width: 480px; margin: 30px auto; background: #222;
+            border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px #000a;
+        }
+        #track {
+            position: relative; width: 100%; height: 400px;
+            background: repeating-linear-gradient(
+                to bottom, #555 0, #555 24px, #666 24px, #666 28px
+            );
+            touch-action: none;
+        }
+        .car {
+            position: absolute; width: 48px; height: 80px;
+            background: #33e; border-radius: 10px 10px 6px 6px;
+            left: 50%; transform: translateX(-50%); bottom: 16px;
+            transition: left 0.1s, width 0.2s, height 0.2s;
+            z-index: 2;
+        }
+        .car.enemy { background: #e33; }
+        .obstacle {
+            position: absolute; width: 40px; height: 40px;
+            background: #b00; border-radius: 8px; z-index: 2;
+        }
+        .boost {
+            position: absolute; width: 40px; height: 40px;
+            background: #0c4; border-radius: 50%; z-index: 2;
+            border: 2px solid #fff;
+        }
+        #score {
+            padding: 10px 16px; font-size: 1.2em;
+            background: #111; letter-spacing: 1px;
+        }
+        #controls {
+            display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
+        }
+        .btn {
+            flex: 1; padding: 16px 0; border: none; background: #555; color: #fff;
+            font-size: 1.1em; border-radius: 6px; margin: 0 6px; user-select: none; touch-action: manipulation;
+        }
+        .btn:active { background: #888; }
+        #game-over, #upgrade-choice {
+            display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.82); color: #fff; font-size: 1.2em;
+            align-items: center; justify-content: center; flex-direction: column; z-index: 10;
+        }
+        #game-over.show, #upgrade-choice.show { display: flex; }
+        .shield {
+            box-shadow: 0 0 0 5px #0ef7 inset !important;
+        }
+        #upgrade-choice button {
+            margin: 12px 0; padding: 10px 28px; font-size: 1.1em; background: #444; color: #fff; border-radius: 8px; border: none;
+            transition: background 0.2s;
+        }
+        #upgrade-choice button:hover { background: #33e; }
+        @media (max-width: 500px) {
+            #game-container { border-radius: 0; }
+            #track { height: 320px; }
+            .car { width: 36px; height: 60px; }
+        }
+    </style>
+</head>
+<body>
+<div id="game-container">
+    <div id="score">Score: <span id="score-val">0</span></div>
+    <div id="track">
+        <div class="car player" id="player-car"></div>
+        <div id="game-over">
+            <div>Game Over</div>
+            <button class="btn" id="restart-btn">Restart</button>
+        </div>
+        <div id="upgrade-choice">
+            <div>Choose an upgrade!</div>
+            <button id="upgrade-speed">Speed Up</button>
+            <button id="upgrade-size">Smaller Car</button>
+            <button id="upgrade-shield">Get Shield</button>
+        </div>
+    </div>
+    <div id="controls">
+        <button class="btn" id="left-btn">&#8592; Left</button>
+        <button class="btn" id="right-btn">Right &#8594;</button>
+    </div>
+</div>
+<script>
+    // --- Game variables ---
+    const track = document.getElementById('track');
+    const playerCar = document.getElementById('player-car');
+    const scoreVal = document.getElementById('score-val');
+    const gameOverScreen = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restart-btn');
+    const leftBtn = document.getElementById('left-btn');
+    const rightBtn = document.getElementById('right-btn');
+    const upgradeMenu = document.getElementById('upgrade-choice');
+    const upgradeBtns = {
+        speed: document.getElementById('upgrade-speed'),
+        size: document.getElementById('upgrade-size'),
+        shield: document.getElementById('upgrade-shield')
+    };
+
+    // Lane calculation
+    const laneCount = 3;
+    const lanes = () => {
+        let w = track.offsetWidth;
+        let spacing = w / laneCount;
+        return Array.from({length: laneCount}, (_,i)=>spacing/2 + i*spacing);
+    };
+
+    // Game state
+    let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, obstacles, boosts;
+    let upgradePending = false;
+    let carSpeed = 1, carSize = 1, shield = false, boostActive = false, boostTimeLeft = 0;
+    let upgradeEvery = 10, lastUpgradeAt = 0;
+
+    function resetGame() {
+        playerLane = 1;
+        score = 0;
+        carSpeed = 1;
+        carSize = 1;
+        shield = false;
+        boostActive = false;
+        boostTimeLeft = 0;
+        lastUpgradeAt = 0;
+        enemyCars = [];
+        enemySpeed = 3;
+        enemySpawnTimer = 0;
+        obstacleTimer = 60;
+        boostTimer = 100;
+        obstacles = [];
+        boosts = [];
+        scoreVal.textContent = score;
+        gameOverScreen.classList.remove('show');
+        upgradeMenu.classList.remove('show');
+        playerCar.classList.remove('shield');
+        setCarSize(1);
+        setCarPosition();
+        document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
+        gameRunning = true;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function setCarPosition() {
+        playerCar.style.left = lanes()[playerLane] + 'px';
+    }
+    function setCarSize(mult) {
+        if (window.innerWidth <= 500) {
+            playerCar.style.width = (36 * mult) + 'px';
+            playerCar.style.height = (60 * mult) + 'px';
+        } else {
+            playerCar.style.width = (48 * mult) + 'px';
+            playerCar.style.height = (80 * mult) + 'px';
+        }
+    }
+
+    function movePlayer(dir) {
+        if (!gameRunning || upgradePending) return;
+        if (dir === 'left' && playerLane > 0) playerLane--;
+        if (dir === 'right' && playerLane < laneCount-1) playerLane++;
+        setCarPosition();
+    }
+
+    function spawnEnemy() {
+        const laneIdx = Math.floor(Math.random()*laneCount);
+        const enemy = document.createElement('div');
+        enemy.className = 'car enemy';
+        enemy.style.left = lanes()[laneIdx] + 'px';
+        enemy.style.top = '-90px';
+        enemy.dataset.lane = laneIdx;
+        track.appendChild(enemy);
+        enemyCars.push({el:enemy, lane:laneIdx, y:-90});
+    }
+
+    function spawnObstacle() {
+        const laneIdx = Math.floor(Math.random()*laneCount);
+        const obs = document.createElement('div');
+        obs.className = 'obstacle';
+        obs.style.left = (lanes()[laneIdx] - 20) + 'px';
+        obs.style.top = '-40px';
+        obs.dataset.lane = laneIdx;
+        track.appendChild(obs);
+        obstacles.push({el:obs, lane:laneIdx, y:-40});
+    }
+
+    function spawnBoost() {
+        const laneIdx = Math.floor(Math.random()*laneCount);
+        const bst = document.createElement('div');
+        bst.className = 'boost';
+        bst.style.left = (lanes()[laneIdx] - 20) + 'px';
+        bst.style.top = '-40px';
+        bst.dataset.lane = laneIdx;
+        track.appendChild(bst);
+        boosts.push({el:bst, lane:laneIdx, y:-40});
+    }
+
+    function showUpgradeMenu() {
+        upgradeMenu.classList.add('show');
+        upgradePending = true;
+    }
+
+    function hideUpgradeMenu() {
+        upgradeMenu.classList.remove('show');
+        upgradePending = false;
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return;
+
+        // Boost timer
+        if (boostActive) {
+            boostTimeLeft--;
+            if (boostTimeLeft <= 0) {
+                boostActive = false;
+                enemySpeed = 3 * carSpeed;
+                playerCar.style.boxShadow = "";
+            }
+        }
+
+        // Move enemies
+        enemyCars.forEach(ec => {
+            ec.y += enemySpeed;
+            ec.el.style.top = ec.y + 'px';
+        });
+        // Remove off-screen enemies and increment score
+        enemyCars = enemyCars.filter(ec=>{
+            if (ec.y > track.offsetHeight) {
+                ec.el.remove();
+                score++;
+                scoreVal.textContent = score;
+                // Increase speed every 5 points
+                if (score % 5 === 0 && enemySpeed < 12) enemySpeed += 0.7 * carSpeed;
+                // Show upgrade menu every upgradeEvery points
+                if (score > 0 && score % upgradeEvery === 0 && score !== lastUpgradeAt) {
+                    lastUpgradeAt = score;
+                    showUpgradeMenu();
+                }
+                return false;
+            }
+            return true;
+        });
+
+        // Move obstacles
+        obstacles.forEach(obs => {
+            obs.y += enemySpeed;
+            obs.el.style.top = obs.y + 'px';
+        });
+        // Remove off-screen obstacles
+        obstacles = obstacles.filter(obs=>{
+            if (obs.y > track.offsetHeight) {
+                obs.el.remove();
+                return false;
+            }
+            return true;
+        });
+
+        // Move boosts
+        boosts.forEach(bst => {
+            bst.y += enemySpeed;
+            bst.el.style.top = bst.y + 'px';
+        });
+        // Remove off-screen boosts
+        boosts = boosts.filter(bst=>{
+            if (bst.y > track.offsetHeight) {
+                bst.el.remove();
+                return false;
+            }
+            return true;
+        });
+
+        // Collision detection
+        const playerRect = playerCar.getBoundingClientRect();
+        // Enemy cars
+        for (let ec of enemyCars) {
+            const enemyRect = ec.el.getBoundingClientRect();
+            if (rectsOverlap(playerRect, enemyRect)) {
+                if (shield) {
+                    ec.el.remove();
+                    enemyCars = enemyCars.filter(e=>e!==ec);
+                    shield = false;
+                    playerCar.classList.remove('shield');
+                } else {
+                    endGame();
+                    return;
+                }
+            }
+        }
+        // Obstacles
+        for (let obs of obstacles) {
+            const obsRect = obs.el.getBoundingClientRect();
+            if (rectsOverlap(playerRect, obsRect)) {
+                if (shield) {
+                    obs.el.remove();
+                    obstacles = obstacles.filter(o=>o!==obs);
+                    shield = false;
+                    playerCar.classList.remove('shield');
+                } else {
+                    endGame();
+                    return;
+                }
+            }
+        }
+        // Boosts
+        for (let bst of boosts) {
+            const bstRect = bst.el.getBoundingClientRect();
+            if (rectsOverlap(playerRect, bstRect)) {
+                bst.el.remove();
+                boosts = boosts.filter(b=>b!==bst);
+                boostActive = true;
+                boostTimeLeft = 120;
+                enemySpeed = 6 * carSpeed;
+                playerCar.style.boxShadow = "0 0 20px 8px #0f7, 0 0 30px 10px #0f7 inset";
+            }
+        }
+
+        // Spawn enemies
+        enemySpawnTimer -= 1;
+        if (enemySpawnTimer <= 0 && !upgradePending) {
+            spawnEnemy();
+            enemySpawnTimer = Math.max(40, 90 - score*2);
+        }
+        // Spawn obstacles
+        obstacleTimer--;
+        if (obstacleTimer <= 0 && !upgradePending) {
+            spawnObstacle();
+            obstacleTimer = Math.max(80, 180 - score*4);
+        }
+        // Spawn boosts
+        boostTimer--;
+        if (boostTimer <= 0 && !upgradePending) {
+            spawnBoost();
+            boostTimer = Math.max(120, 300 - score*6);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+        gameRunning = false;
+        gameOverScreen.classList.add('show');
+        playerCar.style.boxShadow = "";
+    }
+
+    function rectsOverlap(r1, r2) {
+        return !(r1.right < r2.left || r1.left > r2.right ||
+                 r1.bottom < r2.top || r1.top > r2.bottom);
+    }
+
+    // --- Controls ---
+    leftBtn.addEventListener('click', ()=>movePlayer('left'));
+    rightBtn.addEventListener('click',()=>movePlayer('right'));
+    restartBtn.addEventListener('click', resetGame);
+
+    // Keyboard controls
+    window.addEventListener('keydown', e=>{
+        if (!gameRunning && e.key === 'Enter') resetGame();
+        if (e.key === 'ArrowLeft') movePlayer('left');
+        if (e.key === 'ArrowRight') movePlayer('right');
+    });
+
+    // Touch/Swipe controls for mobile
+    let touchStartX = null;
+    track.addEventListener('touchstart', e=>{
+        if (e.touches.length===1) touchStartX = e.touches[0].clientX;
+    });
+    track.addEventListener('touchend', e=>{
+        if (touchStartX===null) return;
+        let dx = (e.changedTouches[0].clientX - touchStartX);
+        if (Math.abs(dx) > 40) {
+            if (dx > 0) movePlayer('right');
+            else movePlayer('left');
+        }
+        touchStartX = null;
+    });
+
+    // Responsive: recalculate lanes on resize
+    window.addEventListener('resize', ()=>{
+        setCarPosition();
+        enemyCars.forEach(ec=>{
+            ec.el.style.left = lanes()[ec.lane] + 'px';
+        });
+        obstacles.forEach(obs=>{
+            obs.el.style.left = (lanes()[obs.lane] - 20) + 'px';
+        });
+        boosts.forEach(bst=>{
+            bst.el.style.left = (lanes()[bst.lane] - 20) + 'px';
+        });
+    });
+
+    // --- Upgrade logic ---
+    upgradeBtns.speed.onclick = ()=>{
+        carSpeed *= 1.25;
+        enemySpeed = 3 * carSpeed;
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    upgradeBtns.size.onclick = ()=>{
+        carSize *= 0.8;
+        setCarSize(carSize);
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    upgradeBtns.shield.onclick = ()=>{
+        shield = true;
+        playerCar.classList.add('shield');
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+
+    // --- Start Game ---
+    resetGame();
+</script>
+</body>
+</html>
