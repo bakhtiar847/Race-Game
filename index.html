@@ -136,6 +136,14 @@
             background: rgba(0,0,0,0.82); color: #fff; font-size: 1.2em;
             align-items: center; justify-content: center; flex-direction: column; z-index: 10;
         }
+        .upgrade {
+    position: absolute; width: 38px; height: 38px;
+    background: radial-gradient(circle at 65% 35%, #f3f312, #e6d300 60%, #b3a800 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 16px 4px #ffe60099, 0 3px 8px #0007;
+    border: 2px solid #fff;
+    z-index: 2;
+}
         #game-over.show, #upgrade-choice.show { display: flex; }
         .shield .body {
             box-shadow: 0 0 0 6px #0ef7 inset, 0 6px 16px #0003;
@@ -178,6 +186,7 @@
 <script>
     // --- Game variables ---
     let lineOffset = 0;
+    let upgradeSpawnTimer;
     const track = document.getElementById('track');
     const playerCar = document.getElementById('player-car');
     const scoreVal = document.getElementById('score-val');
@@ -201,7 +210,7 @@
     };
 
     // Game state
-    let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, obstacles, boosts;
+    let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, upgrades, obstacles, boosts;
     let upgradePending = false;
     let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
     let upgradeEvery = 10, lastUpgradeAt = 0;
@@ -294,6 +303,17 @@
         boosts.push({el:bst, lane:laneIdx, y:-40});
     }
 
+function spawnUpgrade() {
+    const laneIdx = Math.floor(Math.random()*laneCount);
+    const upg = document.createElement('div');
+    upg.className = 'upgrade';
+    upg.style.left = (lanes()[laneIdx] - 19) + 'px';
+    upg.style.top = '-40px';
+    upg.dataset.lane = laneIdx;
+    track.appendChild(upg);
+    upgrades.push({el:upg, lane:laneIdx, y:-40});
+}
+    
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
         upgradePending = true;
@@ -358,6 +378,19 @@ track.style.backgroundPositionY = lineOffset + 'px';
             return true;
         });
 
+// Move upgrades
+upgrades.forEach(upg => {
+    upg.y += carSpeed;
+    upg.el.style.top = upg.y + 'px';
+});
+upgrades = upgrades.filter(upg=>{
+    if (upg.y > track.offsetHeight) {
+        upg.el.remove();
+        return false;
+    }
+    return true;
+});
+        
         // Move boosts
         boosts.forEach(bst => {
             bst.y += carSpeed;
@@ -417,6 +450,17 @@ track.style.backgroundPositionY = lineOffset + 'px';
             }
         }
 
+// Upgrades
+for (let upg of upgrades) {
+    const upgRect = upg.el.getBoundingClientRect();
+    if (rectsOverlap(playerRect, upgRect)) {
+        upg.el.remove();
+        upgrades = upgrades.filter(u=>u!==upg);
+        showUpgradeMenu();
+        break; // only one at a time
+    }
+}
+        
         // Spawn enemies
         enemySpawnTimer -= 1;
         if (enemySpawnTimer <= 0 && !upgradePending) {
@@ -436,6 +480,13 @@ track.style.backgroundPositionY = lineOffset + 'px';
             boostTimer = Math.max(120, 300 - score*6);
         }
 
+// Spawn on-track upgrades
+upgradeSpawnTimer--;
+if (upgradeSpawnTimer <= 0 && !upgradePending) {
+    spawnUpgrade();
+    upgradeSpawnTimer = Math.max(350, 600 - score*10); // adjust timing as you like
+}
+        
         requestAnimationFrame(gameLoop);
     }
 
@@ -514,6 +565,8 @@ track.style.backgroundPositionY = lineOffset + 'px';
     };
 
     function resetGame() {
+        document.querySelectorAll('.upgrade').forEach(e=>e.remove());
+        upgradeSpawnTimer = 350; // adjust as needed
         startTimer();
         playerLane = 1;
         score = 0;
@@ -521,6 +574,7 @@ track.style.backgroundPositionY = lineOffset + 'px';
         carSize = 1;
         shield = false;
         boostActive = false;
+        upgrades = [];
         boostTimeLeft = 0;
         lastUpgradeAt = 0;
         enemyCars = [];
