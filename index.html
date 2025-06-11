@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,38 +5,119 @@
     <title>Race Game with Obstacles, Boosts, and Upgrades</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; background: #333; color: #fff; font-family: Arial, sans-serif; }
+        body { margin: 0; background: #2b2b2b; color: #fff; font-family: Arial, sans-serif; }
         #game-container {
-            max-width: 480px; margin: 30px auto; background: #222;
-            border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px #000a;
+            max-width: 480px; margin: 30px auto; background: #181818;
+            border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px #000c;
         }
         #track {
             position: relative; width: 100%; height: 400px;
-            background: repeating-linear-gradient(
-                to bottom, #555 0, #555 24px, #666 24px, #666 28px
-            );
+            background: linear-gradient(to bottom, #444 0%, #222 100%);
+            /* Lane lines (center and sides) */
+            background-image:
+                repeating-linear-gradient(
+                    to bottom, #fff8 0 8px, transparent 8px 48px
+                ),
+                linear-gradient(to right, #888 0, #888 4%, transparent 4%, transparent 96%, #888 96%, #888 100%);
+            border-left: 7px solid #bbb;
+            border-right: 7px solid #bbb;
             touch-action: none;
+            overflow: hidden;
         }
+        .lane-marker {
+            position: absolute;
+            width: 6px;
+            height: 36px;
+            background: linear-gradient(to bottom, #fff, #ccc 60%, #aaa);
+            left: 50%; transform: translateX(-50%);
+            opacity: 0.7;
+            z-index: 0;
+        }
+        /* Realistic Car Styling */
         .car {
-            position: absolute; width: 48px; height: 80px;
-            background: #33e; border-radius: 10px 10px 6px 6px;
-            left: 50%; transform: translateX(-50%); bottom: 16px;
-            transition: left 0.1s, width 0.2s, height 0.2s;
+            position: absolute;
+            width: 48px; height: 80px;
+            left: 50%; transform: translateX(-50%);
+            bottom: 16px;
             z-index: 2;
+            border-radius: 13px 13px 9px 9px;
+            box-shadow: 0 8px 20px #0008, 0 1px 0px 4px #2223 inset;
+            border: 2.5px solid #fff7;
+            overflow: visible;
         }
-        .car.enemy { background: #e33; }
+        .car .body {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: linear-gradient(160deg, #49f 0%, #1b3d7a 60%, #5af 100%);
+            border-radius: 13px 13px 9px 9px;
+            box-shadow: 0 6px 16px #0003;
+        }
+        .car.enemy .body {
+            background: linear-gradient(160deg, #d22 0%, #900 60%, #fe7 100%);
+            box-shadow: 0 8px 24px #9006;
+        }
+        .car .window {
+            position: absolute;
+            left: 9px; top: 12px;
+            width: 30px; height: 24px;
+            background: linear-gradient(145deg, #e7f8ff 65%, #9ad6ff 100%);
+            border-radius: 7px 7px 10px 10px;
+            box-shadow: 0 0 8px #fff7;
+            border: 1.5px solid #b0e1ff;
+        }
+        .car .grill {
+            position: absolute;
+            left: 14px; bottom: 7px;
+            width: 20px; height: 8px;
+            background: #222;
+            border-radius: 6px 6px 10px 10px;
+            box-shadow: 0 2px 6px #000a;
+            border: 1px solid #666;
+        }
+        .car .wheel {
+            position: absolute;
+            width: 12px; height: 22px;
+            background: linear-gradient(160deg, #232323 60%, #555 100%);
+            border-radius: 7px;
+            box-shadow: 0 2px 5px #000a;
+            top: 59px;
+        }
+        .car .wheel.left { left: 2px; }
+        .car .wheel.right { right: 2px; }
+        .car .light {
+            position: absolute;
+            width: 7px; height: 8px;
+            background: linear-gradient(120deg, #ffd 60%, #ffb 100%);
+            border-radius: 2px 4px 7px 7px;
+            top: 4px;
+        }
+        .car .light.left { left: 8px; }
+        .car .light.right { right: 8px; }
+        /* Enemy Car highlights */
+        .car.enemy .light {
+            background: linear-gradient(120deg, #fbb 60%, #f44 100%);
+        }
+        /* Obstacle Styling */
         .obstacle {
             position: absolute; width: 40px; height: 40px;
-            background: #b00; border-radius: 8px; z-index: 2;
+            background: linear-gradient(120deg, #622 60%, #c33 100%);
+            border-radius: 11px 25% 14px 7px / 12px 25% 8px 7px;
+            box-shadow: 0 0 18px #e005, 0 6px 16px #0006;
+            border: 2px solid #a001;
+            z-index: 2;
         }
+        /* Boost Styling */
         .boost {
-            position: absolute; width: 40px; height: 40px;
-            background: #0c4; border-radius: 50%; z-index: 2;
+            position: absolute; width: 38px; height: 38px;
+            background: radial-gradient(circle at 65% 35%, #9f6, #3d5 60%, #1b1 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 16px 4px #4fa8, 0 3px 8px #0007;
             border: 2px solid #fff;
+            z-index: 2;
         }
         #score {
             padding: 10px 16px; font-size: 1.2em;
-            background: #111; letter-spacing: 1px;
+            background: #181818; letter-spacing: 1px;
         }
         #controls {
             display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
@@ -53,8 +133,9 @@
             align-items: center; justify-content: center; flex-direction: column; z-index: 10;
         }
         #game-over.show, #upgrade-choice.show { display: flex; }
-        .shield {
-            box-shadow: 0 0 0 5px #0ef7 inset !important;
+        .shield .body {
+            box-shadow: 0 0 0 6px #0ef7 inset, 0 6px 16px #0003;
+            outline: 3px solid #0ef7;
         }
         #upgrade-choice button {
             margin: 12px 0; padding: 10px 28px; font-size: 1.1em; background: #444; color: #fff; border-radius: 8px; border: none;
@@ -119,32 +200,39 @@
     let carSpeed = 1, carSize = 1, shield = false, boostActive = false, boostTimeLeft = 0;
     let upgradeEvery = 10, lastUpgradeAt = 0;
 
-    function resetGame() {
-        playerLane = 1;
-        score = 0;
-        carSpeed = 1;
-        carSize = 1;
-        shield = false;
-        boostActive = false;
-        boostTimeLeft = 0;
-        lastUpgradeAt = 0;
-        enemyCars = [];
-        enemySpeed = 3;
-        enemySpawnTimer = 0;
-        obstacleTimer = 60;
-        boostTimer = 100;
-        obstacles = [];
-        boosts = [];
-        scoreVal.textContent = score;
-        gameOverScreen.classList.remove('show');
-        upgradeMenu.classList.remove('show');
-        playerCar.classList.remove('shield');
-        setCarSize(1);
-        setCarPosition();
-        document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
-        gameRunning = true;
-        requestAnimationFrame(gameLoop);
+    // Wheel and car body helpers
+    function makeCarDOM(target, isEnemy=false) {
+        target.innerHTML = '';
+        const body = document.createElement('div');
+        body.className = 'body';
+        if(isEnemy) body.classList.add('enemy');
+        target.appendChild(body);
+        // Windows
+        const windowDiv = document.createElement('div');
+        windowDiv.className = 'window';
+        body.appendChild(windowDiv);
+        // Grill
+        const grill = document.createElement('div');
+        grill.className = 'grill';
+        body.appendChild(grill);
+        // Lights
+        const lightL = document.createElement('div');
+        lightL.className = 'light left';
+        body.appendChild(lightL);
+        const lightR = document.createElement('div');
+        lightR.className = 'light right';
+        body.appendChild(lightR);
+        // Wheels
+        const wheelL = document.createElement('div');
+        wheelL.className = 'wheel left';
+        body.appendChild(wheelL);
+        const wheelR = document.createElement('div');
+        wheelR.className = 'wheel right';
+        body.appendChild(wheelR);
     }
+
+    // Setup player car visuals
+    makeCarDOM(playerCar);
 
     function setCarPosition() {
         playerCar.style.left = lanes()[playerLane] + 'px';
@@ -173,6 +261,7 @@
         enemy.style.left = lanes()[laneIdx] + 'px';
         enemy.style.top = '-90px';
         enemy.dataset.lane = laneIdx;
+        makeCarDOM(enemy, true);
         track.appendChild(enemy);
         enemyCars.push({el:enemy, lane:laneIdx, y:-90});
     }
@@ -192,7 +281,7 @@
         const laneIdx = Math.floor(Math.random()*laneCount);
         const bst = document.createElement('div');
         bst.className = 'boost';
-        bst.style.left = (lanes()[laneIdx] - 20) + 'px';
+        bst.style.left = (lanes()[laneIdx] - 19) + 'px';
         bst.style.top = '-40px';
         bst.dataset.lane = laneIdx;
         track.appendChild(bst);
@@ -203,7 +292,6 @@
         upgradeMenu.classList.add('show');
         upgradePending = true;
     }
-
     function hideUpgradeMenu() {
         upgradeMenu.classList.remove('show');
         upgradePending = false;
@@ -218,7 +306,8 @@
             if (boostTimeLeft <= 0) {
                 boostActive = false;
                 enemySpeed = 3 * carSpeed;
-                playerCar.style.boxShadow = "";
+                playerCar.querySelector('.body').style.boxShadow = "";
+                playerCar.querySelector('.body').style.outline = "";
             }
         }
 
@@ -250,7 +339,6 @@
             obs.y += enemySpeed;
             obs.el.style.top = obs.y + 'px';
         });
-        // Remove off-screen obstacles
         obstacles = obstacles.filter(obs=>{
             if (obs.y > track.offsetHeight) {
                 obs.el.remove();
@@ -264,7 +352,6 @@
             bst.y += enemySpeed;
             bst.el.style.top = bst.y + 'px';
         });
-        // Remove off-screen boosts
         boosts = boosts.filter(bst=>{
             if (bst.y > track.offsetHeight) {
                 bst.el.remove();
@@ -314,7 +401,9 @@
                 boostActive = true;
                 boostTimeLeft = 120;
                 enemySpeed = 6 * carSpeed;
-                playerCar.style.boxShadow = "0 0 20px 8px #0f7, 0 0 30px 10px #0f7 inset";
+                const body = playerCar.querySelector('.body');
+                body.style.boxShadow = "0 0 24px 10px #0f7, 0 0 36px 18px #0f7 inset";
+                body.style.outline = "4px solid #0f7";
             }
         }
 
@@ -343,7 +432,8 @@
     function endGame() {
         gameRunning = false;
         gameOverScreen.classList.add('show');
-        playerCar.style.boxShadow = "";
+        playerCar.querySelector('.body').style.boxShadow = "";
+        playerCar.querySelector('.body').style.outline = "";
     }
 
     function rectsOverlap(r1, r2) {
@@ -388,7 +478,7 @@
             obs.el.style.left = (lanes()[obs.lane] - 20) + 'px';
         });
         boosts.forEach(bst=>{
-            bst.el.style.left = (lanes()[bst.lane] - 20) + 'px';
+            bst.el.style.left = (lanes()[bst.lane] - 19) + 'px';
         });
     });
 
@@ -411,6 +501,34 @@
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
+
+    function resetGame() {
+        playerLane = 1;
+        score = 0;
+        carSpeed = 1;
+        carSize = 1;
+        shield = false;
+        boostActive = false;
+        boostTimeLeft = 0;
+        lastUpgradeAt = 0;
+        enemyCars = [];
+        enemySpeed = 3;
+        enemySpawnTimer = 0;
+        obstacleTimer = 60;
+        boostTimer = 100;
+        obstacles = [];
+        boosts = [];
+        scoreVal.textContent = score;
+        gameOverScreen.classList.remove('show');
+        upgradeMenu.classList.remove('show');
+        playerCar.classList.remove('shield');
+        setCarSize(1);
+        setCarPosition();
+        makeCarDOM(playerCar); // reset visuals
+        document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
+        gameRunning = true;
+        requestAnimationFrame(gameLoop);
+    }
 
     // --- Start Game ---
     resetGame();
