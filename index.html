@@ -176,6 +176,7 @@
 </div>
 <script>
     // --- Game variables ---
+    let lineOffset = 0;
     const track = document.getElementById('track');
     const playerCar = document.getElementById('player-car');
     const scoreVal = document.getElementById('score-val');
@@ -304,6 +305,11 @@
     function gameLoop() {
         if (!gameRunning) return;
 
+        // Move track lane lines to create illusion of motion
+lineOffset += enemySpeed;
+track.style.backgroundPositionY = lineOffset + 'px';
+        if (lineOffset > 48) lineOffset = 0; // 48 is the repeat distance in your gradient
+        
         // Boost timer
         if (boostActive) {
             boostTimeLeft--;
