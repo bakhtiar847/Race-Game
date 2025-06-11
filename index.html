@@ -156,6 +156,7 @@
 <body>
 <div id="game-container">
     <div id="score">Score: <span id="score-val">0</span></div>
+    <div id="timer" style="font-size: 24px; margin-bottom: 10px;">Time: 0s</div>
     <div id="track">
         <div class="car player" id="player-car"></div>
         <div id="game-over">
@@ -441,6 +442,7 @@ track.style.backgroundPositionY = lineOffset + 'px';
 
     function endGame() {
         gameRunning = false;
+        stopTimer();
         gameOverScreen.classList.add('show');
         playerCar.querySelector('.body').style.boxShadow = "";
         playerCar.querySelector('.body').style.outline = "";
@@ -513,6 +515,7 @@ track.style.backgroundPositionY = lineOffset + 'px';
     };
 
     function resetGame() {
+        startTimer();
         playerLane = 1;
         score = 0;
         carSpeed = 1;
@@ -542,6 +545,28 @@ track.style.backgroundPositionY = lineOffset + 'px';
 
     // --- Start Game ---
     resetGame();
+    <script>
+let time = 0;
+let timerInterval = null;
+
+// Call this function to start the timer
+function startTimer() {
+    timerInterval = setInterval(() => {
+        time++;
+        document.getElementById('timer').textContent = 'Time: ' + time + 's';
+    }, 1000);
+}
+
+// Call this function to stop the timer
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// Example: Start the timer when the game starts
+window.onload = function() {
+    startTimer();
+   };
+</script>
 </script>
 </body>
 </html>
