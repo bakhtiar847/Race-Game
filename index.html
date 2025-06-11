@@ -571,8 +571,8 @@ if (upgradeSpawnTimer <= 0 && !upgradePending) {
         playerLane = 1;
         score = 0;
         carSpeed = 1;
-        carSize = 1;
-        shield = false;
+        carSize = 4;
+        shield = true;
         boostActive = false;
         upgrades = [];
         boostTimeLeft = 0;
@@ -614,9 +614,6 @@ function startTimer() {
 function stopTimer() {
     clearInterval(timerInterval);
 }
-    
-    startTimer();
-
 </script>
 </body>
 </html>
