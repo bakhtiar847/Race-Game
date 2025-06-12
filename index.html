@@ -596,9 +596,12 @@ if (upgradeSpawnTimer <= 0 && !upgradePending) {
         requestAnimationFrame(gameLoop);
     }
 
+    
     // --- Start Game ---
-    resetGame();
-   
+    document.addEventListener('DOMContentLoaded', () => {
+        resetGame();
+    });
+    
 let time = 0;
 let timerInterval = null;
 
