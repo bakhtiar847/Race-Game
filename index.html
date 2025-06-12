@@ -624,6 +624,7 @@ let timerInterval = null;
 
 // Call this function to start the timer
 function startTimer() {
+    time = 0;
     timerInterval = setInterval(() => {
         time++;
         document.getElementById('timer').textContent = 'Time: ' + time + 's';
