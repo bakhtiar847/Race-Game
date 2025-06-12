@@ -353,9 +353,10 @@ track.style.backgroundPositionY = lineOffset + 'px';
             boostTimeLeft--;
             if (boostTimeLeft <= 0) {
                 boostActive = false;
-                enemySpeed = 3 * carSpeed;
                 playerCar.querySelector('.body').style.boxShadow = "";
                 playerCar.querySelector('.body').style.outline = "";
+                carSpeed = carSpeed / 2;
+                enemySpeed = 3 * carSpeed;
             }
         }
 
@@ -464,6 +465,7 @@ upgrades = upgrades.filter(upg=>{
                 const body = playerCar.querySelector('.body');
                 body.style.boxShadow = "0 0 24px 10px #0f7, 0 0 36px 18px #0f7 inset";
                 body.style.outline = "4px solid #0f7";
+                carSpeed = carSpeed * 2;
             }
         }
 
