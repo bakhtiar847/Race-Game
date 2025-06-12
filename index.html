@@ -313,6 +313,23 @@ function spawnUpgrade() {
     track.appendChild(upg);
     upgrades.push({el:upg, lane:laneIdx, y:-40});
 }
+
+// Enemy cars randomly change to adjacent lane (not more than once every 700ms)
+setInterval(() => {
+    if (!gameRunning) return;
+    enemyCars.forEach(ec => {
+        // 30% chance to attempt a lane change
+        if (Math.random() < 0.3) {
+            let possibleLanes = [];
+            if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
+            if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
+            if (possibleLanes.length > 0) {
+                let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
+                ec.lane = newLane;
+            }
+        }
+    });
+}, 700);
     
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
