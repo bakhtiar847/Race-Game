@@ -159,6 +159,9 @@
             #track { height: 320px; }
             .car { width: 36px; height: 60px; }
         }
+        .car.enemy {
+    transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
     </style>
 </head>
 <body>
@@ -326,6 +329,7 @@ setInterval(() => {
             if (possibleLanes.length > 0) {
                 let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
                 ec.lane = newLane;
+                ec.el.style.left = lanes()[ec.lane] + 'px';
             }
         }
     });
