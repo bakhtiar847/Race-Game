@@ -686,6 +686,8 @@ upgradeBtns.magnetRight.onclick = ()=>{
         document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
         gameRunning = true;
         requestAnimationFrame(gameLoop);
+        magnetLeft = false;
+        magnetRight = false;
     }
 
     
