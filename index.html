@@ -159,8 +159,14 @@
             #track { height: 320px; }
             .car { width: 36px; height: 60px; }
         }
-        .car {
-    transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1);
+       .car {
+    transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.4s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+        .car.turn-left {
+    transform: translateX(-50%) rotate(-22deg);
+}
+.car.turn-right {
+    transform: translateX(-50%) rotate(22deg);
 }
     </style>
 </head>
@@ -266,11 +272,27 @@
     }
 
     function movePlayer(dir) {
-        if (!gameRunning || upgradePending) return;
-        if (dir === 'left' && playerLane > 0) playerLane--;
-        if (dir === 'right' && playerLane < laneCount-1) playerLane++;
+    if (!gameRunning || upgradePending) return;
+    let turningClass = '';
+    let laneChanged = false;
+    if (dir === 'left' && playerLane > 0) {
+        playerLane--;
+        turningClass = 'turn-left';
+        laneChanged = true;
+    }
+    if (dir === 'right' && playerLane < laneCount-1) {
+        playerLane++;
+        turningClass = 'turn-right';
+        laneChanged = true;
+    }
+    if (laneChanged && turningClass) {
+        playerCar.classList.add(turningClass);
+        setCarPosition();
+        setTimeout(() => playerCar.classList.remove(turningClass), 400); // Match transition time
+    } else if (laneChanged) {
         setCarPosition();
     }
+}
 
     function spawnEnemy() {
         const laneIdx = Math.floor(Math.random()*laneCount);
