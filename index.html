@@ -350,6 +350,13 @@ setInterval(() => {
             if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
             if (possibleLanes.length > 0) {
                 let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
+                let dirClass = '';
+if (newLane < ec.lane) dirClass = 'turn-left';
+if (newLane > ec.lane) dirClass = 'turn-right';
+if (dirClass) {
+    ec.el.classList.add(dirClass);
+    setTimeout(() => ec.el.classList.remove(dirClass), 400); // 400ms matches CSS transition
+}
                 ec.lane = newLane;
                 ec.el.style.left = lanes()[ec.lane] + 'px';
             }
