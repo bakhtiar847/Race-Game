@@ -185,6 +185,8 @@
             <button id="upgrade-speed">Speed Up</button>
             <button id="upgrade-size">Smaller Car</button>
             <button id="upgrade-shield">Get Shield</button>
+            <button id="upgrade-magnet-left">Magnet Left</button>
+<button id="upgrade-magnet-right">Magnet Right</button>
         </div>
     </div>
     <div id="controls">
@@ -223,6 +225,7 @@
     let upgradePending = false;
     let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
     let upgradeEvery = 10, lastUpgradeAt = 0;
+    let magnetLeft = false, magnetRight = false;
 
     // Wheel and car body helpers
     function makeCarDOM(target, isEnemy=false) {
@@ -538,6 +541,30 @@ if (upgradeSpawnTimer <= 0 && !upgradePending) {
     spawnUpgrade();
     upgradeSpawnTimer = Math.max(350, 600 - score*10); // adjust timing as you like
 }
+        // Magnet Attraction Logic
+function attractToCar(itemArray, isUpgrade=false) {
+    itemArray.forEach(item => {
+        const carLane = playerLane;
+        if (magnetLeft && item.lane < carLane) {
+            // Move right by 1 lane if not already next to car
+            if (item.lane < laneCount-1 && item.lane + 1 <= carLane) {
+                item.lane += 1;
+                let offset = isUpgrade ? -19 : -19; // match spawn offsets
+                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+            }
+        }
+        if (magnetRight && item.lane > carLane) {
+            // Move left by 1 lane if not already next to car
+            if (item.lane > 0 && item.lane - 1 >= carLane) {
+                item.lane -= 1;
+                let offset = isUpgrade ? -19 : -19;
+                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+            }
+        }
+    });
+}
+attractToCar(boosts);
+attractToCar(upgrades, true);
         
         requestAnimationFrame(gameLoop);
     }
@@ -615,6 +642,19 @@ if (upgradeSpawnTimer <= 0 && !upgradePending) {
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
+    upgradeBtns.magnetLeft = document.getElementById('upgrade-magnet-left');
+upgradeBtns.magnetRight = document.getElementById('upgrade-magnet-right');
+
+upgradeBtns.magnetLeft.onclick = ()=>{
+    magnetLeft = true;
+    hideUpgradeMenu();
+    requestAnimationFrame(gameLoop);
+};
+upgradeBtns.magnetRight.onclick = ()=>{
+    magnetRight = true;
+    hideUpgradeMenu();
+    requestAnimationFrame(gameLoop);
+};
 
     function resetGame() {
         document.querySelectorAll('.upgrade').forEach(e=>e.remove());
