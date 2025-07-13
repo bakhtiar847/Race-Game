@@ -294,7 +294,7 @@
     for (let i = 1; i < laneCount; i++) {
         const divider = document.createElement('div');
         divider.className = 'lane-divider';
-        divider.style.left = (lanes()[i] - 3) + 'px'; // center divider between lanes
+        divider.style.left = (lanes()[i] - (w / laneCount) / 2) + 'px'; // center divider between lanes
         divider.style.top = '0px';
         divider.style.height = track.offsetHeight + 'px';
         track.appendChild(divider);
