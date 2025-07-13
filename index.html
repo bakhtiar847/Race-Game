@@ -37,6 +37,19 @@
             opacity: 0.7;
             z-index: 0;
         }
+        .lane-divider {
+    position: absolute;
+    width: 6px;
+    height: 48px;
+    background: repeating-linear-gradient(
+        to bottom,
+        yellow 0 12px,
+        transparent 12px 24px
+    );
+    opacity: 0.8;
+    z-index: 1;
+    pointer-events: none;
+}
         /* Realistic Car Styling */
         .car {
             position: absolute;
@@ -273,6 +286,20 @@
             playerCar.style.height = (80 * mult) + 'px';
         }
     }
+
+    function createLaneDividers() {
+    // Remove old dividers if any
+    document.querySelectorAll('.lane-divider').forEach(e => e.remove());
+    // Don't draw on first/last edge; just between lanes
+    for (let i = 1; i < laneCount; i++) {
+        const divider = document.createElement('div');
+        divider.className = 'lane-divider';
+        divider.style.left = (lanes()[i] - 3) + 'px'; // center divider between lanes
+        divider.style.top = '0px';
+        divider.style.height = track.offsetHeight + 'px';
+        track.appendChild(divider);
+    }
+}
 
     function movePlayer(dir) {
     if (!gameRunning || upgradePending) return;
@@ -621,6 +648,7 @@ attractToCar(upgrades, true);
         boosts.forEach(bst=>{
             bst.el.style.left = (lanes()[bst.lane] - 19) + 'px';
         });
+        createLaneDividers();
     });
 
     // --- Upgrade logic ---
@@ -688,6 +716,7 @@ upgradeBtns.magnetRight.onclick = ()=>{
         requestAnimationFrame(gameLoop);
         magnetLeft = false;
         magnetRight = false;
+        createLaneDividers();
     }
 
     
