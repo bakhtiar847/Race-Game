@@ -421,7 +421,8 @@ if (dirClass) {
 function moveObjs(){
 // Move track lane lines to create illusion of motion
 lineOffset % 48 += carSpeed;
-track.style.backgroundPositionY = lineOffset + 'px';
+track.style.backgroundPositionY = lineOffset + 'px'
+    /* // Not working
     // Move lane divider DOM elements
 document.querySelectorAll('.lane-divider').forEach(divider => {
     let currentTop = parseFloat(divider.style.top || '0');
@@ -432,6 +433,7 @@ document.querySelectorAll('.lane-divider').forEach(divider => {
     }
     divider.style.top = currentTop + 'px';
 });
+*/
         // Move enemies
         enemyCars.forEach(ec => {
             ec.y += enemySpeed;
