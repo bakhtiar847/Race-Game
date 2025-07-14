@@ -420,9 +420,8 @@ if (dirClass) {
         }
 function moveObjs(){
 // Move track lane lines to create illusion of motion
-lineOffset += carSpeed;
+lineOffset % 48 += carSpeed;
 track.style.backgroundPositionY = lineOffset + 'px';
-        if (lineOffset > 48) lineOffset = 0; // 48 is the repeat distance in gradient
     
         // Move enemies
         enemyCars.forEach(ec => {
