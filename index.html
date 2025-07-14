@@ -404,12 +404,8 @@ if (dirClass) {
     }
 
     function gameLoop() {
+        // Check if game is running
         if (!gameRunning) return;
-
-        // Move track lane lines to create illusion of motion
-lineOffset += carSpeed;
-track.style.backgroundPositionY = lineOffset + 'px';
-        if (lineOffset > 48) lineOffset = 0; // 48 is the repeat distance in your gradient
         
         // Boost timer
         if (boostActive) {
@@ -422,7 +418,12 @@ track.style.backgroundPositionY = lineOffset + 'px';
                 enemySpeed = 3 * carSpeed;
             }
         }
-
+function moveObjs(){
+// Move track lane lines to create illusion of motion
+lineOffset += carSpeed;
+track.style.backgroundPositionY = lineOffset + 'px';
+        if (lineOffset > 48) lineOffset = 0; // 48 is the repeat distance in gradient
+    
         // Move enemies
         enemyCars.forEach(ec => {
             ec.y += enemySpeed;
@@ -484,8 +485,9 @@ upgrades = upgrades.filter(upg=>{
             }
             return true;
         });
-
+}
         // Collision detection
+        function collDetect(){
         const playerRect = playerCar.getBoundingClientRect();
         // Enemy cars
         for (let ec of enemyCars) {
@@ -542,7 +544,8 @@ for (let upg of upgrades) {
         break; // only one at a time
     }
 }
-        
+        }
+        function spawnObjs() {
         // Spawn enemies
         enemySpawnTimer -= 1;
         if (enemySpawnTimer <= 0 && !upgradePending) {
@@ -568,6 +571,15 @@ if (upgradeSpawnTimer <= 0 && !upgradePending) {
     spawnUpgrade();
     upgradeSpawnTimer = Math.max(350, 600 - score*10); // adjust timing as you like
 }
+        }
+        moveObjs();
+        collDetect();
+        spawnObjs();
+        attractToCar(boosts);
+        attractToCar(upgrades, true);
+        requestAnimationFrame(gameLoop);
+    }
+
         // Magnet Attraction Logic
 function attractToCar(itemArray, isUpgrade=false) {
     itemArray.forEach(item => {
@@ -590,12 +602,7 @@ function attractToCar(itemArray, isUpgrade=false) {
         }
     });
 }
-attractToCar(boosts);
-attractToCar(upgrades, true);
-        
-        requestAnimationFrame(gameLoop);
-    }
-
+    
     function endGame() {
         gameRunning = false;
         stopTimer();
