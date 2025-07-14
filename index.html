@@ -422,7 +422,16 @@ function moveObjs(){
 // Move track lane lines to create illusion of motion
 lineOffset % 48 += carSpeed;
 track.style.backgroundPositionY = lineOffset + 'px';
-    
+    // Move lane divider DOM elements
+document.querySelectorAll('.lane-divider').forEach(divider => {
+    let currentTop = parseFloat(divider.style.top || '0');
+    currentTop += carSpeed;
+    // Reset divider to top once it goes off screen for infinite loop effect
+    if (currentTop > track.offsetHeight) {
+        currentTop = -divider.offsetHeight;
+    }
+    divider.style.top = currentTop + 'px';
+});
         // Move enemies
         enemyCars.forEach(ec => {
             ec.y += enemySpeed;
