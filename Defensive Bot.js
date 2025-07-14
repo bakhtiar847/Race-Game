@@ -1,6 +1,6 @@
 // Defensive Bot Script for Race Game
 
-let botEnabled = false;
+let botEnabled = window.location.href.split("?")[1] == "DefBot";
 
 // Helper: Find all objects in a lane ahead of the player
 function getObjectsInLane(lane, playerRect) {
