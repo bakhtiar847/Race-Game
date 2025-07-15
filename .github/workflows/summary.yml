@@ -38,16 +38,46 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            Find possible solutions to the following GitHub issue, in a markdown list. Only include the solutions.
+            Find possible solutions to the following GitHub issue, seperated by commas. Only include the solutions.
             Title: ${{ github.event.issue.title }}
             Body: ${{ github.event.issue.body }}
             Summary: ${{ steps.inference.outputs.response }}
 
+      # Step 2: Convert the CSV into Markdown format and save as an output variable
+      - name: Convert CSV to Markdown and Array
+        id: convert
+        run: |
+          # Read the list
+          LIST="${{ steps.inferenceb.outputs.response }}"
+          
+          # Convert to an array
+          IFS=',' read -r -a array <<< "$LIST"
+
+          # Create Markdown list with title
+          MARKDOWN="#Possible Solutions:"$'\n'
+          for item in "${array[@]}"; do
+            MARKDOWN+="- $item"$'\n'
+          done
+
+          # Save the Markdown list for future steps
+          echo "markdown_list<<EOF" >> $GITHUB_ENV
+          echo "$MARKDOWN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Save the array as a JSON string for future processing
+          ARRAY_JSON=$(printf '%s\n' "${array[@]}" | jq -R . | jq -s .)
+          echo "array_json=$ARRAY_JSON" >> $GITHUB_ENV
+
+        # Set output variables for this step (also useful for debugging or referencing in future steps)
+        env:
+          CSV_LIST: ${{ env.CSV_LIST }}
+        shell: bash
+
       - name: Comment with AI solutions
         run: |
-          gh issue comment $ISSUE_NUMBER --body '${{ steps.inference.outputs.response }}'
+          gh issue comment $ISSUE_NUMBER --body '${{ env.MARKDOWN_LIST }}'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          RESPONSE: ${{ steps.inference.outputs.response }}
+          RESPONSE: ${{ env.MARKDOWN_LIST }}
 
