@@ -32,3 +32,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESPONSE: ${{ steps.inference.outputs.response }}
+
+      - name: List possible solutions
+        id: inferenceb
+        uses: actions/ai-inference@v1
+        with:
+          prompt: |
+            Find possible solutions to the following GitHub issue, in a markdown list. Only include the solutions.
+            Title: ${{ github.event.issue.title }}
+            Body: ${{ github.event.issue.body }}
+            Summary: ${{ steps.inference.outputs.response }}
+
+      - name: Comment with AI solutions
+        run: |
+          gh issue comment $ISSUE_NUMBER --body '${{ steps.inference.outputs.response }}'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RESPONSE: ${{ steps.inference.outputs.response }}
+
