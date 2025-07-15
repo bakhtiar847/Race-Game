@@ -11,7 +11,8 @@ jobs:
       issues: write
       models: read
       contents: read
-
+    outputs:
+      items: ${{ steps.set-items.outputs.items }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,7 +67,7 @@ jobs:
 
           # Save the array as a JSON string for future processing
           ARRAY_JSON=$(printf '%s\n' "${array[@]}" | jq -R . | jq -s .)
-          echo "array_json=$ARRAY_JSON" >> $GITHUB_ENV
+          echo "array_json=$ARRAY_JSON" >> $GITHUB_ENV >> $GITHUB_OUTPUT
 
         # Set output variables for this step (also useful for debugging or referencing in future steps)
         env:
@@ -81,3 +82,15 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESPONSE: ${{ env.MARKDOWN_LIST }}
 
+#  process-items:
+#    needs: summary  # Depend on the previous job
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        item: ${{ fromJson(needs.define-array.outputs.items) }}
+#    steps:
+#      - name: Process current item
+#        run: |
+#          echo "Processing item: ${{ matrix.item }}"
+#          # Perform actions with the current item
+          
