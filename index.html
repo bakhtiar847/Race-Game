@@ -212,6 +212,7 @@
     // --- Game variables ---
     let lineOffset = 0;
     let upgradeSpawnTimer;
+    let lives = 3;
     const track = document.getElementById('track');
     const playerCar = document.getElementById('player-car');
     const scoreVal = document.getElementById('score-val');
@@ -510,7 +511,7 @@ upgrades = upgrades.filter(upg=>{
                     shield = false;
                     playerCar.classList.remove('shield');
                 } else {
-                    endGame();
+                    removeLife();
                     return;
                 }
             }
@@ -525,7 +526,7 @@ upgrades = upgrades.filter(upg=>{
                     shield = false;
                     playerCar.classList.remove('shield');
                 } else {
-                    endGame();
+                    removeLife();
                     return;
                 }
             }
@@ -555,6 +556,10 @@ for (let upg of upgrades) {
         break; // only one at a time
     }
 }
+            function removelife() {
+                lives--;
+                if (lives = 0) {endGame();}
+            }
         }
         function spawnObjs() {
         // Spawn enemies
