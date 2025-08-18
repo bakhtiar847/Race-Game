@@ -726,7 +726,7 @@ upgradeBtns.heart.onclick = ()=>{
         playerLane = 1;
         score = 0;
         carSpeed = 1;
-        carSize = 4;
+        carSize = 1; // should be 1 for normal size
         shield = true;
         boostActive = false;
         upgrades = [];
@@ -744,9 +744,9 @@ upgradeBtns.heart.onclick = ()=>{
         gameOverScreen.classList.remove('show');
         upgradeMenu.classList.remove('show');
         playerCar.classList.remove('shield');
-        setCarSize(1);
-        setCarPosition();
         makeCarDOM(playerCar); // reset visuals
+        setCarSize(carSize);
+        setCarPosition();
         document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
         gameRunning = true;
         requestAnimationFrame(gameLoop);
