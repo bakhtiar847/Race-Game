@@ -151,7 +151,7 @@
         }
         .upgrade {
     position: absolute; width: 38px; height: 38px;
-    background-image: url('upgrade.png');
+    background-image: url('Upgrade.png'); /* Fix case sensitivity */
     border-radius: 50%;
     box-shadow: 0 0 16px 4px #ffe60099, 0 3px 8px #0007;
     border: 2px solid #fff;
@@ -181,11 +181,28 @@
 .car.turn-right {
     transform: translateX(-50%) rotate(22deg);
 }
+/* Heart (life) Styling */
+        .heart {
+            display: inline-block;
+            width: 32px; height: 32px;
+            background: none;
+            vertical-align: middle;
+        }
+        .heart svg {
+            width: 100%; height: 100%;
+            display: block;
+        }
+        .heart-track {
+            position: absolute; width: 32px; height: 32px;
+            z-index: 2;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 <div id="game-container">
     <div id="score">Score: <span id="score-val">0</span></div>
+    <div id="lives-overlay" style="position:absolute;top:10px;left:10px;z-index:20;"></div>
     <div id="timer" style="font-size: 24px; margin-bottom: 10px;">Time: 0s</div>
     <div id="track">
         <div class="car player" id="player-car"></div>
@@ -199,7 +216,10 @@
             <button id="upgrade-size">Smaller Car</button>
             <button id="upgrade-shield">Get Shield</button>
             <button id="upgrade-magnet-left">Magnet Left</button>
-<button id="upgrade-magnet-right">Magnet Right</button>
+            <button id="upgrade-magnet-right">Magnet Right</button>
+            <button id="upgrade-heart">+1 Heart</button>
+        
+   
         </div>
     </div>
     <div id="controls">
@@ -404,25 +424,9 @@ if (dirClass) {
         upgradeMenu.classList.remove('show');
         upgradePending = false;
     }
-
-    function gameLoop() {
-        // Check if game is running
-        if (!gameRunning) return;
-        
-        // Boost timer
-        if (boostActive) {
-            boostTimeLeft--;
-            if (boostTimeLeft <= 0) {
-                boostActive = false;
-                playerCar.querySelector('.body').style.boxShadow = "";
-                playerCar.querySelector('.body').style.outline = "";
-                carSpeed = carSpeed / 2;
-                enemySpeed = 3 * carSpeed;
-            }
-        }
 function moveObjs(){
 // Move track lane lines to create illusion of motion
-lineOffset % 48 += carSpeed;
+lineOffset = (lineOffset + carSpeed) % 48;
 track.style.backgroundPositionY = lineOffset + 'px'
     /* // Not working
     // Move lane divider DOM elements
@@ -556,43 +560,44 @@ for (let upg of upgrades) {
         break; // only one at a time
     }
 }
-            function removelife() {
-                lives--;
-                if (lives = 0) {endGame();}
+        // Heart collision
+        heartCollision();
+    }
+
+    // Add missing removeLife function
+    function removeLife() {
+        lives--;
+        if (lives === 0) {
+            endGame();
+        }
+        drawHearts();
+    }
+
+    // --- Game loop ---
+    function gameLoop() {
+        // Check if game is running
+        if (!gameRunning) return;
+        
+        // Boost timer
+        if (boostActive) {
+            boostTimeLeft--;
+            if (boostTimeLeft <= 0) {
+                boostActive = false;
+                playerCar.querySelector('.body').style.boxShadow = "";
+                playerCar.querySelector('.body').style.outline = "";
+                carSpeed = carSpeed / 2;
+                enemySpeed = 3 * carSpeed;
             }
         }
-        function spawnObjs() {
-        // Spawn enemies
-        enemySpawnTimer -= 1;
-        if (enemySpawnTimer <= 0 && !upgradePending) {
-            spawnEnemy();
-            enemySpawnTimer = Math.max(40, 90 - score*2);
-        }
-        // Spawn obstacles
-        obstacleTimer--;
-        if (obstacleTimer <= 0 && !upgradePending) {
-            spawnObstacle();
-            obstacleTimer = Math.max(80, 180 - score*4);
-        }
-        // Spawn boosts
-        boostTimer--;
-        if (boostTimer <= 0 && !upgradePending) {
-            spawnBoost();
-            boostTimer = Math.max(120, 300 - score*6);
-        }
+    
 
-// Spawn on-track upgrades
-upgradeSpawnTimer--;
-if (upgradeSpawnTimer <= 0 && !upgradePending) {
-    spawnUpgrade();
-    upgradeSpawnTimer = Math.max(350, 600 - score*10); // adjust timing as you like
-}
-        }
         moveObjs();
+        moveHearts();
         collDetect();
         spawnObjs();
         attractToCar(boosts);
         attractToCar(upgrades, true);
+        drawHearts();
         requestAnimationFrame(gameLoop);
     }
 
@@ -695,6 +700,7 @@ function attractToCar(itemArray, isUpgrade=false) {
     };
     upgradeBtns.magnetLeft = document.getElementById('upgrade-magnet-left');
 upgradeBtns.magnetRight = document.getElementById('upgrade-magnet-right');
+upgradeBtns.heart = document.getElementById('upgrade-heart');
 
 upgradeBtns.magnetLeft.onclick = ()=>{
     magnetLeft = true;
@@ -703,6 +709,12 @@ upgradeBtns.magnetLeft.onclick = ()=>{
 };
 upgradeBtns.magnetRight.onclick = ()=>{
     magnetRight = true;
+    hideUpgradeMenu();
+    requestAnimationFrame(gameLoop);
+};
+// Add heart upgrade button logic
+upgradeBtns.heart.onclick = ()=>{
+    addLife();
     hideUpgradeMenu();
     requestAnimationFrame(gameLoop);
 };
@@ -727,6 +739,7 @@ upgradeBtns.magnetRight.onclick = ()=>{
         boostTimer = 100;
         obstacles = [];
         boosts = [];
+        lives = 3; // Reset lives on game restart
         scoreVal.textContent = score;
         gameOverScreen.classList.remove('show');
         upgradeMenu.classList.remove('show');
@@ -740,6 +753,7 @@ upgradeBtns.magnetRight.onclick = ()=>{
         magnetLeft = false;
         magnetRight = false;
         createLaneDividers();
+        drawHearts();
     }
 
     
@@ -764,6 +778,60 @@ function startTimer() {
 function stopTimer() {
     clearInterval(timerInterval);
 }
+ // --- Heart (life) overlay ---
+    function drawHearts() {
+        const overlay = document.getElementById('lives-overlay');
+        overlay.innerHTML = '';
+        for (let i = 0; i < lives; i++) {
+            overlay.innerHTML += `<span class="heart"><svg viewBox='0 0 32 32'><path d='M16 29s-11-7.6-11-15.2C5 7.6 9.6 4 16 10.2 22.4 4 27 7.6 27 13.8 27 21.4 16 29 16 29z' fill='#e33' stroke='#fff' stroke-width='2'/></svg></span>`;
+        }
+    }
+    // --- Heart (life) on track ---
+    function spawnHeart() {
+        const laneIdx = Math.floor(Math.random()*laneCount);
+        const heart = document.createElement('div');
+        heart.className = 'heart-track';
+        heart.style.left = (lanes()[laneIdx] - 16) + 'px';
+        heart.style.top = '-32px';
+        heart.dataset.lane = laneIdx;
+        heart.innerHTML = `<svg viewBox='0 0 32 32'><path d='M16 29s-11-7.6-11-15.2C5 7.6 9.6 4 16 10.2 22.4 4 27 7.6 27 13.8 27 21.4 16 29 16 29z' fill='#e33' stroke='#fff' stroke-width='2'/></svg>`;
+        track.appendChild(heart);
+        heartsOnTrack.push({el:heart, lane:laneIdx, y:-32});
+    }
+    let heartsOnTrack = [];
+    // Move hearts on track
+    function moveHearts() {
+        heartsOnTrack.forEach(h => {
+            h.y += carSpeed;
+            h.el.style.top = h.y + 'px';
+        });
+        heartsOnTrack = heartsOnTrack.filter(h => {
+            if (h.y > track.offsetHeight) {
+                h.el.remove();
+                return false;
+            }
+            return true;
+        });
+    }
+    // Heart collision
+    function heartCollision() {
+        const playerRect = playerCar.getBoundingClientRect();
+        for (let h of heartsOnTrack) {
+            const hRect = h.el.getBoundingClientRect();
+            if (rectsOverlap(playerRect, hRect)) {
+                h.el.remove();
+                heartsOnTrack = heartsOnTrack.filter(x=>x!==h);
+                addLife();
+                break;
+            }
+        }
+    }
+
+    // Add life function
+    function addLife() {
+        lives++;
+        drawHearts();
+    }
 </script>
 </body>
 </html>
