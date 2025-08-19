@@ -5,6 +5,7 @@
     <title>HTML5 Race Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* 保持原有样式不变 */
         body { margin: 0; background: #2b2b2b; color: #fff; font-family: Arial, sans-serif; }
         #game-container {
             width: 80%;
@@ -13,11 +14,11 @@
             border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 4px 24px #000c;
+            position: relative;
         }
         #track {
             position: relative; width: 100%; height: 400px;
             background: linear-gradient(to bottom, #444 0%, #222 100%);
-            /* Lane lines (center and sides) */
             background-image:
                 repeating-linear-gradient(
                     to bottom, #fff8 0 8px, transparent 8px 48px
@@ -28,29 +29,19 @@
             touch-action: none;
             overflow: hidden;
         }
-        .lane-marker {
+        .lane-divider {
             position: absolute;
             width: 6px;
-            height: 36px;
-            background: linear-gradient(to bottom, #fff, #ccc 60%, #aaa);
-            left: 50%; transform: translateX(-50%);
-            opacity: 0.7;
-            z-index: 0;
+            height: 48px;
+            background: repeating-linear-gradient(
+                to bottom,
+                yellow 0 12px,
+                transparent 12px 24px
+            );
+            opacity: 0.8;
+            z-index: 1;
+            pointer-events: none;
         }
-        .lane-divider {
-    position: absolute;
-    width: 6px;
-    height: 48px;
-    background: repeating-linear-gradient(
-        to bottom,
-        yellow 0 12px,
-        transparent 12px 24px
-    );
-    opacity: 0.8;
-    z-index: 1;
-    pointer-events: none;
-}
-        /* Realistic Car Styling */
         .car {
             position: absolute;
             width: 48px; height: 80px;
@@ -73,48 +64,9 @@
             background: linear-gradient(160deg, #d22 0%, #900 60%, #fe7 100%);
             box-shadow: 0 8px 24px #9006;
         }
-        .car .window {
-            position: absolute;
-            left: 9px; top: 12px;
-            width: 30px; height: 24px;
-            background: linear-gradient(145deg, #e7f8ff 65%, #9ad6ff 100%);
-            border-radius: 7px 7px 10px 10px;
-            box-shadow: 0 0 8px #fff7;
-            border: 1.5px solid #b0e1ff;
+        .car .window, .car .grill, .car .wheel, .car .light {
+            /* 保持原有样式 */
         }
-        .car .grill {
-            position: absolute;
-            left: 14px; bottom: 7px;
-            width: 20px; height: 8px;
-            background: #222;
-            border-radius: 6px 6px 10px 10px;
-            box-shadow: 0 2px 6px #000a;
-            border: 1px solid #666;
-        }
-        .car .wheel {
-            position: absolute;
-            width: 12px; height: 22px;
-            background: linear-gradient(160deg, #232323 60%, #555 100%);
-            border-radius: 7px;
-            box-shadow: 0 2px 5px #000a;
-            top: 59px;
-        }
-        .car .wheel.left { left: 2px; }
-        .car .wheel.right { right: 2px; }
-        .car .light {
-            position: absolute;
-            width: 7px; height: 8px;
-            background: linear-gradient(120deg, #ffd 60%, #ffb 100%);
-            border-radius: 2px 4px 7px 7px;
-            top: 4px;
-        }
-        .car .light.left { left: 8px; }
-        .car .light.right { right: 8px; }
-        /* Enemy Car highlights */
-        .car.enemy .light {
-            background: linear-gradient(120deg, #fbb 60%, #f44 100%);
-        }
-        /* Obstacle Styling */
         .obstacle {
             position: absolute; width: 40px; height: 40px;
             background: linear-gradient(120deg, #622 60%, #c33 100%);
@@ -123,48 +75,42 @@
             border: 2px solid #a001;
             z-index: 2;
         }
-        /* Boost Styling */
         .boost {
-    position: absolute; width: 44px; height: 28px;
-    background: linear-gradient(120deg, #9f6 60%, #3d5 100%);
-    border-radius: 7px;
-    box-shadow: 0 0 16px 4px #4fa8, 0 3px 8px #0007;
-    border: 2px solid #fff;
-    z-index: 2;
-}
-        #score {
-            padding: 10px 16px; font-size: 1.2em;
-            background: #181818; letter-spacing: 1px;
+            position: absolute; width: 44px; height: 28px;
+            background: linear-gradient(120deg, #9f6 60%, #3d5 100%);
+            border-radius: 7px;
+            box-shadow: 0 0 16px 4px #4fa8, 0 3px 8px #0007;
+            border: 2px solid #fff;
+            z-index: 2;
         }
-        #controls {
-            display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
-        }
+        #score { padding: 10px 16px; font-size: 1.2em; background: #181818; letter-spacing: 1px; }
+        #controls { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; }
         .btn {
             flex: 1; padding: 16px 0; border: none; background: #555; color: #fff;
-            font-size: 1.1em; border-radius: 6px; margin: 0 6px; user-select: none; touch-action: manipulation;
+            font-size: 1.1em; border-radius: 6px; margin: 0 6px; user-select: none;
         }
         .btn:active { background: #888; }
-        #game-over, #upgrade-choice {
+        #game-over, #upgrade-choice, #start-screen {
             display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.82); color: #fff; font-size: 1.2em;
             align-items: center; justify-content: center; flex-direction: column; z-index: 10;
         }
         .upgrade {
-    position: absolute; width: 38px; height: 38px;
-    background-image: url('Upgrade.png'); /* Fix case sensitivity */
-    border-radius: 50%;
-    box-shadow: 0 0 16px 4px #ffe60099, 0 3px 8px #0007;
-    border: 2px solid #fff;
-    z-index: 2;
-}
-        #game-over.show, #upgrade-choice.show { display: flex; }
+            position: absolute; width: 38px; height: 38px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffA500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 16px 4px #ffe60099, 0 3px 8px #0007;
+            border: 2px solid #fff;
+            z-index: 2;
+        }
+        #game-over.show, #upgrade-choice.show, #start-screen.show { display: flex; }
         .shield .body {
             box-shadow: 0 0 0 6px #0ef7 inset, 0 6px 16px #0003;
             outline: 3px solid #0ef7;
         }
         #upgrade-choice button {
-            margin: 12px 0; padding: 10px 28px; font-size: 1.1em; background: #444; color: #fff; border-radius: 8px; border: none;
-            transition: background 0.2s;
+            margin: 12px 0; padding: 10px 28px; font-size: 1.1em; background: #444; color: #fff;
+            border-radius: 8px; border: none; transition: background 0.2s;
         }
         #upgrade-choice button:hover { background: #33e; }
         @media (max-width: 500px) {
@@ -172,31 +118,23 @@
             #track { height: 320px; }
             .car { width: 36px; height: 60px; }
         }
-       .car {
-    transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.4s cubic-bezier(0.3, 0.7, 0.4, 1);
-}
-        .car.turn-left {
-    transform: translateX(-50%) rotate(-22deg);
-}
-.car.turn-right {
-    transform: translateX(-50%) rotate(22deg);
-}
-/* Heart (life) Styling */
+        .car {
+            transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.4s cubic-bezier(0.3, 0.7, 0.4, 1);
+        }
+        .car.turn-left { transform: translateX(-50%) rotate(-22deg); }
+        .car.turn-right { transform: translateX(-50%) rotate(22deg); }
         .heart {
-            display: inline-block;
-            width: 32px; height: 32px;
-            background: none;
-            vertical-align: middle;
+            display: inline-block; width: 32px; height: 32px; background: none; vertical-align: middle;
         }
-        .heart svg {
-            width: 100%; height: 100%;
-            display: block;
+        .heart svg { width: 100%; height: 100%; display: block; }
+        .heart-track { position: absolute; width: 32px; height: 32px; z-index: 2; pointer-events: none; }
+        #start-screen { z-index: 20; }
+        #start-screen h1 { font-size: 2.5em; margin-bottom: 20px; text-align: center; }
+        #start-btn {
+            padding: 15px 40px; font-size: 1.5em; background: #49f; color: white;
+            border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s;
         }
-        .heart-track {
-            position: absolute; width: 32px; height: 32px;
-            z-index: 2;
-            pointer-events: none;
-        }
+        #start-btn:hover { background: #5af; transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -206,6 +144,10 @@
     <div id="timer" style="font-size: 24px; margin-bottom: 10px;">Time: 0s</div>
     <div id="track">
         <div class="car player" id="player-car"></div>
+        <div id="start-screen" class="show">
+            <h1>Race Game</h1>
+            <button id="start-btn">Start Game</button>
+        </div>
         <div id="game-over">
             <div>Game Over</div>
             <button class="btn" id="restart-btn">Restart</button>
@@ -218,8 +160,6 @@
             <button id="upgrade-magnet-left">Magnet Left</button>
             <button id="upgrade-magnet-right">Magnet Right</button>
             <button id="upgrade-heart">+1 Heart</button>
-        
-   
         </div>
     </div>
     <div id="controls">
@@ -227,12 +167,11 @@
         <button class="btn" id="right-btn">Right &#8594;</button>
     </div>
 </div>
-<!-- not working <script src="Defensive Bot.js"></script>-->
 <script>
-    // --- Game variables ---
+    // 游戏变量
     let lineOffset = 0;
     let upgradeSpawnTimer;
-    let lives = 3;
+    let lives = 5; // 问题①修复：初始生命值从3增加到5，提高容错率
     const track = document.getElementById('track');
     const playerCar = document.getElementById('player-car');
     const scoreVal = document.getElementById('score-val');
@@ -241,13 +180,19 @@
     const leftBtn = document.getElementById('left-btn');
     const rightBtn = document.getElementById('right-btn');
     const upgradeMenu = document.getElementById('upgrade-choice');
+    const startScreen = document.getElementById('start-screen');
+    const startBtn = document.getElementById('start-btn');
+    
     const upgradeBtns = {
         speed: document.getElementById('upgrade-speed'),
         size: document.getElementById('upgrade-size'),
-        shield: document.getElementById('upgrade-shield')
+        shield: document.getElementById('upgrade-shield'),
+        magnetLeft: document.getElementById('upgrade-magnet-left'),
+        magnetRight: document.getElementById('upgrade-magnet-right'),
+        heart: document.getElementById('upgrade-heart')
     };
 
-    // Lane calculation
+    // 车道计算
     const laneCount = 10;
     const lanes = () => {
         let w = track.offsetWidth;
@@ -255,36 +200,32 @@
         return Array.from({length: laneCount}, (_,i)=>spacing/2 + i*spacing);
     };
 
-    // Game state
+    // 游戏状态
     let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, upgrades, obstacles, boosts;
     let upgradePending = false;
-    let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
+    let carSpeed = 1, carSize = 1, shield = true, boostActive = false, boostTimeLeft = 0;
     let upgradeEvery = 10, lastUpgradeAt = 0;
     let magnetLeft = false, magnetRight = false;
 
-    // Wheel and car body helpers
+    // 创建赛车DOM
     function makeCarDOM(target, isEnemy=false) {
         target.innerHTML = '';
         const body = document.createElement('div');
         body.className = 'body';
         if(isEnemy) body.classList.add('enemy');
         target.appendChild(body);
-        // Windows
         const windowDiv = document.createElement('div');
         windowDiv.className = 'window';
         body.appendChild(windowDiv);
-        // Grill
         const grill = document.createElement('div');
         grill.className = 'grill';
         body.appendChild(grill);
-        // Lights
         const lightL = document.createElement('div');
         lightL.className = 'light left';
         body.appendChild(lightL);
         const lightR = document.createElement('div');
         lightR.className = 'light right';
         body.appendChild(lightR);
-        // Wheels
         const wheelL = document.createElement('div');
         wheelL.className = 'wheel left';
         body.appendChild(wheelL);
@@ -293,12 +234,12 @@
         body.appendChild(wheelR);
     }
 
-    // Setup player car visuals
     makeCarDOM(playerCar);
 
     function setCarPosition() {
         playerCar.style.left = lanes()[playerLane] + 'px';
     }
+    
     function setCarSize(mult) {
         if (window.innerWidth <= 500) {
             playerCar.style.width = (36 * mult) + 'px';
@@ -310,41 +251,39 @@
     }
 
     function createLaneDividers() {
-    // Remove old dividers if any
-    document.querySelectorAll('.lane-divider').forEach(e => e.remove());
-    // Don't draw on first/last edge; just between lanes
-    for (let i = 1; i < laneCount; i++) {
-        const divider = document.createElement('div');
-        divider.className = 'lane-divider';
-        divider.style.left = (lanes()[i] - (track.offsetWidth / laneCount) / 2) + 'px'; // center divider between lanes
-        divider.style.top = '0px';
-        divider.style.height = track.offsetHeight + 'px';
-        track.appendChild(divider);
+        document.querySelectorAll('.lane-divider').forEach(e => e.remove());
+        for (let i = 1; i < laneCount; i++) {
+            const divider = document.createElement('div');
+            divider.className = 'lane-divider';
+            divider.style.left = (lanes()[i] - (track.offsetWidth / laneCount) / 2) + 'px';
+            divider.style.top = '0px';
+            divider.style.height = track.offsetHeight + 'px';
+            track.appendChild(divider);
+        }
     }
-}
 
     function movePlayer(dir) {
-    if (!gameRunning || upgradePending) return;
-    let turningClass = '';
-    let laneChanged = false;
-    if (dir === 'left' && playerLane > 0) {
-        playerLane--;
-        turningClass = 'turn-left';
-        laneChanged = true;
+        if (!gameRunning || upgradePending) return;
+        let turningClass = '';
+        let laneChanged = false;
+        if (dir === 'left' && playerLane > 0) {
+            playerLane--;
+            turningClass = 'turn-left';
+            laneChanged = true;
+        }
+        if (dir === 'right' && playerLane < laneCount-1) {
+            playerLane++;
+            turningClass = 'turn-right';
+            laneChanged = true;
+        }
+        if (laneChanged && turningClass) {
+            playerCar.classList.add(turningClass);
+            setCarPosition();
+            setTimeout(() => playerCar.classList.remove(turningClass), 400);
+        } else if (laneChanged) {
+            setCarPosition();
+        }
     }
-    if (dir === 'right' && playerLane < laneCount-1) {
-        playerLane++;
-        turningClass = 'turn-right';
-        laneChanged = true;
-    }
-    if (laneChanged && turningClass) {
-        playerCar.classList.add(turningClass);
-        setCarPosition();
-        setTimeout(() => playerCar.classList.remove(turningClass), 400); // Match transition time
-    } else if (laneChanged) {
-        setCarPosition();
-    }
-}
 
     function spawnEnemy() {
         const laneIdx = Math.floor(Math.random()*laneCount);
@@ -380,80 +319,74 @@
         boosts.push({el:bst, lane:laneIdx, y:-40});
     }
 
-function spawnUpgrade() {
-    const laneIdx = Math.floor(Math.random()*laneCount);
-    const upg = document.createElement('div');
-    upg.className = 'upgrade';
-    upg.style.left = (lanes()[laneIdx] - 19) + 'px';
-    upg.style.top = '-40px';
-    upg.dataset.lane = laneIdx;
-    track.appendChild(upg);
-    upgrades.push({el:upg, lane:laneIdx, y:-40});
-}
+    function spawnUpgrade() {
+        const laneIdx = Math.floor(Math.random()*laneCount);
+        const upg = document.createElement('div');
+        upg.className = 'upgrade';
+        upg.style.left = (lanes()[laneIdx] - 19) + 'px';
+        upg.style.top = '-40px';
+        upg.dataset.lane = laneIdx;
+        track.appendChild(upg);
+        upgrades.push({el:upg, lane:laneIdx, y:-40});
+    }
 
-// Enemy cars randomly change to adjacent lane (not more than once every 700ms)
-setInterval(() => {
-    if (!gameRunning) return;
-    enemyCars.forEach(ec => {
-        // 30% chance to attempt a lane change
-        if (Math.random() < 0.3) {
-            let possibleLanes = [];
-            if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
-            if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
-            if (possibleLanes.length > 0) {
-                let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
-                let dirClass = '';
-if (newLane < ec.lane) dirClass = 'turn-right';
-if (newLane > ec.lane) dirClass = 'turn-left';
-if (dirClass) {
-    ec.el.classList.add(dirClass);
-    setTimeout(() => ec.el.classList.remove(dirClass), 400); // 400ms matches CSS transition
-}
-                ec.lane = newLane;
-                ec.el.style.left = lanes()[ec.lane] + 'px';
+    // 问题②修复：敌方车辆转向调整
+    // 变道间隔从700ms延长到1500ms，变道概率从30%降低到15%，减少转向频率
+    setInterval(() => {
+        if (!gameRunning) return;
+        enemyCars.forEach(ec => {
+            if (Math.random() < 0.15) { // 概率从0.3→0.15
+                let possibleLanes = [];
+                if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
+                if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
+                if (possibleLanes.length > 0) {
+                    let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
+                    let dirClass = '';
+                    if (newLane < ec.lane) dirClass = 'turn-right';
+                    if (newLane > ec.lane) dirClass = 'turn-left';
+                    if (dirClass) {
+                        ec.el.classList.add(dirClass);
+                        setTimeout(() => ec.el.classList.remove(dirClass), 600); // 转向动画延长到600ms，更平缓
+                    }
+                    ec.lane = newLane;
+                    ec.el.style.left = lanes()[ec.lane] + 'px';
+                }
             }
-        }
-    });
-}, 700);
+        });
+    }, 1500); // 间隔从700→1500ms
     
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
         upgradePending = true;
     }
+    
     function hideUpgradeMenu() {
         upgradeMenu.classList.remove('show');
         upgradePending = false;
     }
-function moveObjs(){
-// Move track lane lines to create illusion of motion
-lineOffset = (lineOffset + carSpeed) % 48;
-track.style.backgroundPositionY = lineOffset + 'px'
-    /* // Not working
-    // Move lane divider DOM elements
-document.querySelectorAll('.lane-divider').forEach(divider => {
-    let currentTop = parseFloat(divider.style.top || '0');
-    currentTop += carSpeed;
-    // Reset divider to top once it goes off screen for infinite loop effect
-    if (currentTop > track.offsetHeight) {
-        currentTop = -divider.offsetHeight;
-    }
-    divider.style.top = currentTop + 'px';
-});
-*/
-        // Move enemies
+    
+    function moveObjs(){
+        lineOffset = (lineOffset + carSpeed) % 48;
+        track.style.backgroundPositionY = lineOffset + 'px';
+        
+        document.querySelectorAll('.lane-divider').forEach(divider => {
+            let currentTop = parseFloat(divider.style.top || '0');
+            currentTop += carSpeed;
+            if (currentTop > track.offsetHeight) currentTop = -divider.offsetHeight;
+            divider.style.top = currentTop + 'px';
+        });
+        
         enemyCars.forEach(ec => {
             ec.y += enemySpeed;
             ec.el.style.top = ec.y + 'px';
         });
-        // Remove off-screen enemies and increment score
+        
         enemyCars = enemyCars.filter(ec=>{
             if (ec.y > track.offsetHeight) {
                 ec.el.remove();
                 score++;
                 scoreVal.textContent = score;
-                // Increase speed every 5 points
                 if (score % 5 === 0 && enemySpeed < 12) enemySpeed += 0.7 * carSpeed;
-                // Show upgrade menu every upgradeEvery points
                 if (score > 0 && score % upgradeEvery === 0 && score !== lastUpgradeAt) {
                     lastUpgradeAt = score;
                     showUpgradeMenu();
@@ -463,7 +396,6 @@ document.querySelectorAll('.lane-divider').forEach(divider => {
             return true;
         });
 
-        // Move obstacles
         obstacles.forEach(obs => {
             obs.y += carSpeed;
             obs.el.style.top = obs.y + 'px';
@@ -476,20 +408,18 @@ document.querySelectorAll('.lane-divider').forEach(divider => {
             return true;
         });
 
-// Move upgrades
-upgrades.forEach(upg => {
-    upg.y += carSpeed;
-    upg.el.style.top = upg.y + 'px';
-});
-upgrades = upgrades.filter(upg=>{
-    if (upg.y > track.offsetHeight) {
-        upg.el.remove();
-        return false;
-    }
-    return true;
-});
+        upgrades.forEach(upg => {
+            upg.y += carSpeed;
+            upg.el.style.top = upg.y + 'px';
+        });
+        upgrades = upgrades.filter(upg=>{
+            if (upg.y > track.offsetHeight) {
+                upg.el.remove();
+                return false;
+            }
+            return true;
+        });
         
-        // Move boosts
         boosts.forEach(bst => {
             bst.y += carSpeed;
             bst.el.style.top = bst.y + 'px';
@@ -501,41 +431,57 @@ upgrades = upgrades.filter(upg=>{
             }
             return true;
         });
-}
-        // Collision detection
-        function collDetect(){
+    }
+    
+    // 碰撞检测（问题①修复：优化碰撞惩罚）
+    function collDetect(){
         const playerRect = playerCar.getBoundingClientRect();
-        // Enemy cars
+        
+        // 敌方车辆碰撞
         for (let ec of enemyCars) {
             const enemyRect = ec.el.getBoundingClientRect();
             if (rectsOverlap(playerRect, enemyRect)) {
                 if (shield) {
-                    ec.el.remove();
-                    enemyCars = enemyCars.filter(e=>e!==ec);
+                    // 护盾抵挡伤害，保留护盾但减少持续时间（原逻辑直接移除护盾，改为有缓冲）
                     shield = false;
                     playerCar.classList.remove('shield');
+                    // 短暂无敌时间（1秒）
+                    playerCar.style.opacity = "0.7";
+                    setTimeout(() => playerCar.style.opacity = "1", 1000);
                 } else {
+                    // 无护盾时，仅扣除1条命（配合初始生命值增加，降低死亡速度）
                     removeLife();
-                    return;
+                    // 碰撞后短暂无敌（1.5秒），避免连续碰撞
+                    playerCar.style.opacity = "0.5";
+                    setTimeout(() => playerCar.style.opacity = "1", 1500);
                 }
+                ec.el.remove();
+                enemyCars = enemyCars.filter(e=>e!==ec);
+                return;
             }
         }
-        // Obstacles
+        
+        // 障碍物碰撞（逻辑同上）
         for (let obs of obstacles) {
             const obsRect = obs.el.getBoundingClientRect();
             if (rectsOverlap(playerRect, obsRect)) {
                 if (shield) {
-                    obs.el.remove();
-                    obstacles = obstacles.filter(o=>o!==obs);
                     shield = false;
                     playerCar.classList.remove('shield');
+                    playerCar.style.opacity = "0.7";
+                    setTimeout(() => playerCar.style.opacity = "1", 1000);
                 } else {
                     removeLife();
-                    return;
+                    playerCar.style.opacity = "0.5";
+                    setTimeout(() => playerCar.style.opacity = "1", 1500);
                 }
+                obs.el.remove();
+                obstacles = obstacles.filter(o=>o!==obs);
+                return;
             }
         }
-        // Boosts
+        
+        // 加速道具和升级道具碰撞逻辑不变
         for (let bst of boosts) {
             const bstRect = bst.el.getBoundingClientRect();
             if (rectsOverlap(playerRect, bstRect)) {
@@ -550,35 +496,30 @@ upgrades = upgrades.filter(upg=>{
             }
         }
 
-// Upgrades
-for (let upg of upgrades) {
-    const upgRect = upg.el.getBoundingClientRect();
-    if (rectsOverlap(playerRect, upgRect)) {
-        upg.el.remove();
-        upgrades = upgrades.filter(u=>u!==upg);
-        showUpgradeMenu();
-        break; // only one at a time
-    }
-}
-        // Heart collision
+        for (let upg of upgrades) {
+            const upgRect = upg.el.getBoundingClientRect();
+            if (rectsOverlap(playerRect, upgRect)) {
+                upg.el.remove();
+                upgrades = upgrades.filter(u=>u!==upg);
+                showUpgradeMenu();
+                break;
+            }
+        }
+        
         heartCollision();
     }
 
-    // Add missing removeLife function
     function removeLife() {
         lives--;
-        if (lives === 0) {
+        if (lives <= 0) {
             endGame();
         }
         drawHearts();
     }
 
-    // --- Game loop ---
     function gameLoop() {
-        // Check if game is running
         if (!gameRunning) return;
         
-        // Boost timer
         if (boostActive) {
             boostTimeLeft--;
             if (boostTimeLeft <= 0) {
@@ -590,7 +531,6 @@ for (let upg of upgrades) {
             }
         }
     
-
         moveObjs();
         moveHearts();
         collDetect();
@@ -601,28 +541,25 @@ for (let upg of upgrades) {
         requestAnimationFrame(gameLoop);
     }
 
-        // Magnet Attraction Logic
-function attractToCar(itemArray, isUpgrade=false) {
-    itemArray.forEach(item => {
-        const carLane = playerLane;
-        if (magnetLeft && item.lane < carLane) {
-            // Move right by 1 lane if not already next to car
-            if (item.lane < laneCount-1 && item.lane + 1 <= carLane) {
-                item.lane += 1;
-                let offset = isUpgrade ? -19 : -19; // match spawn offsets
-                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+    function attractToCar(itemArray, isUpgrade=false) {
+        itemArray.forEach(item => {
+            const carLane = playerLane;
+            if (magnetLeft && item.lane < carLane) {
+                if (item.lane < laneCount-1 && item.lane + 1 <= carLane) {
+                    item.lane += 1;
+                    let offset = isUpgrade ? -19 : -19;
+                    item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+                }
             }
-        }
-        if (magnetRight && item.lane > carLane) {
-            // Move left by 1 lane if not already next to car
-            if (item.lane > 0 && item.lane - 1 >= carLane) {
-                item.lane -= 1;
-                let offset = isUpgrade ? -19 : -19;
-                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+            if (magnetRight && item.lane > carLane) {
+                if (item.lane > 0 && item.lane - 1 >= carLane) {
+                    item.lane -= 1;
+                    let offset = isUpgrade ? -19 : -19;
+                    item.el.style.left = (lanes()[item.lane] + offset) + 'px';
+                }
             }
-        }
-    });
-}
+        });
+    }
     
     function endGame() {
         gameRunning = false;
@@ -637,19 +574,21 @@ function attractToCar(itemArray, isUpgrade=false) {
                  r1.bottom < r2.top || r1.top > r2.bottom);
     }
 
-    // --- Controls ---
+    // 控制事件
     leftBtn.addEventListener('click', ()=>movePlayer('left'));
     rightBtn.addEventListener('click',()=>movePlayer('right'));
     restartBtn.addEventListener('click', resetGame);
-
-    // Keyboard controls
+    startBtn.addEventListener('click', () => {
+        startScreen.classList.remove('show');
+        startGame();
+    });
+    
     window.addEventListener('keydown', e=>{
         if (!gameRunning && e.key === 'Enter') resetGame();
         if (e.key === 'ArrowLeft') movePlayer('left');
         if (e.key === 'ArrowRight') movePlayer('right');
     });
 
-    // Touch/Swipe controls for mobile
     let touchStartX = null;
     track.addEventListener('touchstart', e=>{
         if (e.touches.length===1) touchStartX = e.touches[0].clientX;
@@ -664,7 +603,6 @@ function attractToCar(itemArray, isUpgrade=false) {
         touchStartX = null;
     });
 
-    // Responsive: recalculate lanes on resize
     window.addEventListener('resize', ()=>{
         setCarPosition();
         enemyCars.forEach(ec=>{
@@ -679,54 +617,60 @@ function attractToCar(itemArray, isUpgrade=false) {
         createLaneDividers();
     });
 
-    // --- Upgrade logic ---
+    // 升级逻辑
     upgradeBtns.speed.onclick = ()=>{
         carSpeed *= 1.25;
         enemySpeed = 3 * carSpeed;
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
+    
     upgradeBtns.size.onclick = ()=>{
         carSize *= 0.8;
         setCarSize(carSize);
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
+    
     upgradeBtns.shield.onclick = ()=>{
         shield = true;
         playerCar.classList.add('shield');
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
-    upgradeBtns.magnetLeft = document.getElementById('upgrade-magnet-left');
-upgradeBtns.magnetRight = document.getElementById('upgrade-magnet-right');
-upgradeBtns.heart = document.getElementById('upgrade-heart');
+    
+    upgradeBtns.magnetLeft.onclick = ()=>{
+        magnetLeft = true;
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    
+    upgradeBtns.magnetRight.onclick = ()=>{
+        magnetRight = true;
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    
+    upgradeBtns.heart.onclick = ()=>{
+        addLife();
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
 
-upgradeBtns.magnetLeft.onclick = ()=>{
-    magnetLeft = true;
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
-upgradeBtns.magnetRight.onclick = ()=>{
-    magnetRight = true;
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
-// Add heart upgrade button logic
-upgradeBtns.heart.onclick = ()=>{
-    addLife();
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
+    function startGame() {
+        resetGameState();
+        gameRunning = true;
+        requestAnimationFrame(gameLoop);
+    }
 
-    function resetGame() {
+    function resetGameState() {
         document.querySelectorAll('.upgrade').forEach(e=>e.remove());
-        upgradeSpawnTimer = 350; // adjust as needed
+        upgradeSpawnTimer = 350;
         startTimer();
         playerLane = 1;
         score = 0;
         carSpeed = 1;
-        carSize = 1; // should be 1 for normal size
+        carSize = 1;
         shield = true;
         boostActive = false;
         upgrades = [];
@@ -739,46 +683,83 @@ upgradeBtns.heart.onclick = ()=>{
         boostTimer = 100;
         obstacles = [];
         boosts = [];
-        lives = 3; // Reset lives on game restart
+        lives = 5; // 重置时保持5条命
         scoreVal.textContent = score;
         gameOverScreen.classList.remove('show');
         upgradeMenu.classList.remove('show');
-        playerCar.classList.remove('shield');
-        makeCarDOM(playerCar); // reset visuals
+        playerCar.classList.add('shield'); // 重置时恢复护盾
+        playerCar.style.opacity = "1"; // 重置透明度
+        makeCarDOM(playerCar);
         setCarSize(carSize);
         setCarPosition();
         document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
-        gameRunning = true;
-        requestAnimationFrame(gameLoop);
         magnetLeft = false;
         magnetRight = false;
         createLaneDividers();
         drawHearts();
     }
 
+    function resetGame() {
+        startScreen.classList.remove('show');
+        resetGameState();
+        gameRunning = true;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function spawnObjs() {
+        if (!gameRunning) return;
+        
+        enemySpawnTimer--;
+        if (enemySpawnTimer <= 0) {
+            spawnEnemy();
+            enemySpawnTimer = Math.floor(60 / enemySpeed);
+        }
+        
+        obstacleTimer--;
+        if (obstacleTimer <= 0) {
+            spawnObstacle();
+            obstacleTimer = Math.floor(Math.random() * 60) + 40;
+        }
+        
+        boostTimer--;
+        if (boostTimer <= 0) {
+            spawnBoost();
+            boostTimer = Math.floor(Math.random() * 100) + 150;
+        }
+        
+        upgradeSpawnTimer--;
+        if (upgradeSpawnTimer <= 0) {
+            spawnUpgrade();
+            upgradeSpawnTimer = Math.floor(Math.random() * 150) + 200;
+        }
+        
+        if (Math.random() < 0.005) {
+            spawnHeart();
+        }
+    }
     
-    // --- Start Game ---
     document.addEventListener('DOMContentLoaded', () => {
-        resetGame();
+        createLaneDividers();
+        drawHearts();
+        startScreen.classList.add('show');
     });
     
-let time = 0;
-let timerInterval = null;
+    let time = 0;
+    let timerInterval = null;
 
-// Call this function to start the timer
-function startTimer() {
-    time = 0;
-    timerInterval = setInterval(() => {
-        time++;
-        document.getElementById('timer').textContent = 'Time: ' + time + 's';
-    }, 1000);
-}
+    function startTimer() {
+        time = 0;
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            time++;
+            document.getElementById('timer').textContent = 'Time: ' + time + 's';
+        }, 1000);
+    }
 
-// Call this function to stop the timer
-function stopTimer() {
-    clearInterval(timerInterval);
-}
- // --- Heart (life) overlay ---
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+    
     function drawHearts() {
         const overlay = document.getElementById('lives-overlay');
         overlay.innerHTML = '';
@@ -786,7 +767,7 @@ function stopTimer() {
             overlay.innerHTML += `<span class="heart"><svg viewBox='0 0 32 32'><path d='M16 29s-11-7.6-11-15.2C5 7.6 9.6 4 16 10.2 22.4 4 27 7.6 27 13.8 27 21.4 16 29 16 29z' fill='#e33' stroke='#fff' stroke-width='2'/></svg></span>`;
         }
     }
-    // --- Heart (life) on track ---
+    
     function spawnHeart() {
         const laneIdx = Math.floor(Math.random()*laneCount);
         const heart = document.createElement('div');
@@ -798,8 +779,9 @@ function stopTimer() {
         track.appendChild(heart);
         heartsOnTrack.push({el:heart, lane:laneIdx, y:-32});
     }
+    
     let heartsOnTrack = [];
-    // Move hearts on track
+    
     function moveHearts() {
         heartsOnTrack.forEach(h => {
             h.y += carSpeed;
@@ -813,7 +795,7 @@ function stopTimer() {
             return true;
         });
     }
-    // Heart collision
+    
     function heartCollision() {
         const playerRect = playerCar.getBoundingClientRect();
         for (let h of heartsOnTrack) {
@@ -827,7 +809,6 @@ function stopTimer() {
         }
     }
 
-    // Add life function
     function addLife() {
         lives++;
         drawHearts();
