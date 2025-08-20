@@ -427,7 +427,8 @@ if (dirClass) {
 function moveObjs(){
 // Move track lane lines to create illusion of motion
 lineOffset = (lineOffset + carSpeed) % 48;
-track.style.backgroundPositionY = lineOffset + 'px'
+// Animate both background layers: dashed center line and side lines
+track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
     /* // Not working
     // Move lane divider DOM elements
 document.querySelectorAll('.lane-divider').forEach(divider => {
