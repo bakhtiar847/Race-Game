@@ -465,18 +465,11 @@ function moveObjs(){
 lineOffset = (lineOffset + carSpeed) % 48;
 // Animate both background layers: dashed center line and side lines
 track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
-    /* // Not working
-    // Move lane divider DOM elements
-document.querySelectorAll('.lane-divider').forEach(divider => {
-    let currentTop = parseFloat(divider.style.top || '0');
-    currentTop += carSpeed;
-    // Reset divider to top once it goes off screen for infinite loop effect
-    if (currentTop > track.offsetHeight) {
-        currentTop = -divider.offsetHeight;
-    }
-    divider.style.top = currentTop + 'px';
-});
-*/
+    // Animate yellow lane divider dashed lines by shifting their background position
+    document.querySelectorAll('.lane-divider').forEach(divider => {
+        // Move the background position to create a moving dashed effect
+        divider.style.backgroundPositionY = `${lineOffset}px`;
+    });
         // Move enemies
         enemyCars.forEach(ec => {
             ec.y += enemySpeed;
