@@ -568,10 +568,10 @@ for (let upg of upgrades) {
     // Add missing removeLife function
     function removeLife() {
         lives--;
-        if (lives === 0) {
+        drawHearts();
+        if (lives <= 0) {
             endGame();
         }
-        drawHearts();
     }
 
     // --- Game loop ---
