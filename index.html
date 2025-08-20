@@ -5,6 +5,12 @@
     <title>HTML5 Race Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /*
+         * --- CSS Styling ---
+         * This section styles the game layout, track, cars, obstacles, boosts, upgrades, hearts, and UI elements.
+         * Each class or ID corresponds to a part of the game (track, car, buttons, overlays, etc).
+         * Comments are added to explain the purpose of each block.
+         */
         body { margin: 0; background: #2b2b2b; color: #fff; font-family: Arial, sans-serif; }
         #game-container {
             width: 80%;
@@ -200,16 +206,30 @@
     </style>
 </head>
 <body>
+<!--
+    --- Game Container ---
+    This is the main wrapper for the game, containing the score, timer, track, overlays, and controls.
+-->
 <div id="game-container">
+    <!-- Score display -->
     <div id="score">Score: <span id="score-val">0</span></div>
+    <!-- Hearts (lives) overlay -->
     <div id="lives-overlay" style="position:absolute;top:10px;left:10px;z-index:20;"></div>
+    <!-- Timer display -->
     <div id="timer" style="font-size: 24px; margin-bottom: 10px;">Time: 0s</div>
+    <!--
+        --- Track ---
+        This is the main play area. Cars, obstacles, boosts, upgrades, and hearts appear here.
+    -->
     <div id="track">
+        <!-- Player's car -->
         <div class="car player" id="player-car"></div>
+        <!-- Game Over overlay -->
         <div id="game-over">
             <div>Game Over</div>
             <button class="btn" id="restart-btn">Restart</button>
         </div>
+        <!-- Upgrade choice menu -->
         <div id="upgrade-choice">
             <div>Choose an upgrade!</div>
             <button id="upgrade-speed">Speed Up</button>
@@ -218,18 +238,18 @@
             <button id="upgrade-magnet-left">Magnet Left</button>
             <button id="upgrade-magnet-right">Magnet Right</button>
             <button id="upgrade-heart">+1 Heart</button>
-        
-   
         </div>
     </div>
+    <!-- Controls for left/right movement (for mobile and desktop) -->
     <div id="controls">
         <button class="btn" id="left-btn">&#8592; Left</button>
         <button class="btn" id="right-btn">Right &#8594;</button>
     </div>
 </div>
-<!-- not working <script src="Defensive Bot.js"></script>-->
+<!-- Main game logic is below. All game code is in this script tag. -->
 <script>
     // --- Game variables ---
+    // These variables keep track of the game state, player, enemies, upgrades, etc.
     let lineOffset = 0;
     let upgradeSpawnTimer;
     let lives = 3;
@@ -248,6 +268,7 @@
     };
 
     // Lane calculation
+    // Returns an array of x-positions for each lane, based on the track width and number of lanes.
     const laneCount = 10;
     const lanes = () => {
         let w = track.offsetWidth;
@@ -256,6 +277,7 @@
     };
 
     // Game state
+    // These variables are used to keep track of the player, score, enemies, obstacles, upgrades, etc.
     let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, upgrades, obstacles, boosts;
     let upgradePending = false;
     let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
@@ -263,6 +285,7 @@
     let magnetLeft = false, magnetRight = false;
 
     // Wheel and car body helpers
+    // This function creates the car's DOM structure (body, windows, grill, lights, wheels).
     function makeCarDOM(target, isEnemy=false) {
         target.innerHTML = '';
         const body = document.createElement('div');
@@ -294,11 +317,14 @@
     }
 
     // Setup player car visuals
+    // Call this once to create the player's car appearance.
     makeCarDOM(playerCar);
 
+    // Set the player's car position based on the current lane.
     function setCarPosition() {
         playerCar.style.left = lanes()[playerLane] + 'px';
     }
+    // Set the player's car size (used for upgrades).
     function setCarSize(mult) {
         if (window.innerWidth <= 500) {
             playerCar.style.width = (36 * mult) + 'px';
@@ -309,6 +335,7 @@
         }
     }
 
+    // Draw vertical lane divider lines on the track.
     function createLaneDividers() {
     // Remove old dividers if any
     document.querySelectorAll('.lane-divider').forEach(e => e.remove());
@@ -323,6 +350,7 @@
     }
 }
 
+    // Move the player's car left or right by changing lanes.
     function movePlayer(dir) {
     if (!gameRunning || upgradePending) return;
     let turningClass = '';
@@ -346,6 +374,7 @@
     }
 }
 
+    // Spawn an enemy car in a random lane at the top of the track.
     function spawnEnemy() {
         const laneIdx = Math.floor(Math.random()*laneCount);
         const enemy = document.createElement('div');
@@ -358,6 +387,7 @@
         enemyCars.push({el:enemy, lane:laneIdx, y:-90});
     }
 
+    // Spawn an obstacle in a random lane at the top of the track.
     function spawnObstacle() {
         const laneIdx = Math.floor(Math.random()*laneCount);
         const obs = document.createElement('div');
@@ -369,6 +399,7 @@
         obstacles.push({el:obs, lane:laneIdx, y:-40});
     }
 
+    // Spawn a speed boost in a random lane at the top of the track.
     function spawnBoost() {
         const laneIdx = Math.floor(Math.random()*laneCount);
         const bst = document.createElement('div');
@@ -380,6 +411,7 @@
         boosts.push({el:bst, lane:laneIdx, y:-40});
     }
 
+// Spawn an upgrade in a random lane at the top of the track.
 function spawnUpgrade() {
     const laneIdx = Math.floor(Math.random()*laneCount);
     const upg = document.createElement('div');
@@ -392,6 +424,7 @@ function spawnUpgrade() {
 }
 
 // Enemy cars randomly change to adjacent lane (not more than once every 700ms)
+// Enemy cars randomly change to adjacent lanes every 700ms.
 setInterval(() => {
     if (!gameRunning) return;
     enemyCars.forEach(ec => {
@@ -416,14 +449,17 @@ if (dirClass) {
     });
 }, 700);
     
+    // Show the upgrade menu overlay.
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
         upgradePending = true;
     }
+    // Hide the upgrade menu overlay.
     function hideUpgradeMenu() {
         upgradeMenu.classList.remove('show');
         upgradePending = false;
     }
+// Move all game objects (enemies, obstacles, boosts, upgrades, hearts) and animate the track.
 function moveObjs(){
 // Move track lane lines to create illusion of motion
 lineOffset = (lineOffset + carSpeed) % 48;
@@ -503,8 +539,9 @@ upgrades = upgrades.filter(upg=>{
             return true;
         });
 }
-        // Collision detection
-        function collDetect(){
+    // Collision detection
+    // Check for collisions between the player and other objects.
+    function collDetect(){
         const playerRect = playerCar.getBoundingClientRect();
         // Enemy cars
         for (let ec of enemyCars) {
@@ -565,7 +602,7 @@ for (let upg of upgrades) {
         heartCollision();
     }
 
-    // Add missing removeLife function
+    // Remove one life and update the display. End the game if no lives remain.
     function removeLife() {
         lives--;
         drawHearts();
@@ -575,6 +612,7 @@ for (let upg of upgrades) {
     }
 
     // --- Game loop ---
+    // This function runs every animation frame while the game is running.
     function gameLoop() {
         // Check if game is running
         if (!gameRunning) return;
@@ -597,6 +635,7 @@ for (let upg of upgrades) {
         collDetect();
     spawnObjs();
 // Spawns enemies, obstacles, boosts, upgrades, and hearts at intervals
+// Each type of object has its own timer for spawning.
 function spawnObjs() {
     // Enemy spawn
     if (typeof enemySpawnTimer === 'undefined') enemySpawnTimer = 0;
@@ -638,13 +677,14 @@ function spawnObjs() {
         heartSpawnTimer = 400 + Math.floor(Math.random() * 200);
     }
 }
-        attractToCar(boosts);
-        attractToCar(upgrades, true);
-        drawHearts();
-        requestAnimationFrame(gameLoop);
+    attractToCar(boosts); // Magnet effect for boosts
+    attractToCar(upgrades, true); // Magnet effect for upgrades
+    drawHearts(); // Draw hearts (lives) overlay
+    requestAnimationFrame(gameLoop); // Continue the game loop
     }
 
         // Magnet Attraction Logic
+        // If magnet upgrades are active, move boosts/upgrades toward the player's lane.
 function attractToCar(itemArray, isUpgrade=false) {
     itemArray.forEach(item => {
         const carLane = playerLane;
@@ -667,6 +707,7 @@ function attractToCar(itemArray, isUpgrade=false) {
     });
 }
     
+    // End the game: stop timer, show game over overlay, reset car visuals.
     function endGame() {
         gameRunning = false;
         stopTimer();
@@ -675,12 +716,14 @@ function attractToCar(itemArray, isUpgrade=false) {
         playerCar.querySelector('.body').style.outline = "";
     }
 
+    // Helper function: returns true if two rectangles overlap (collision detection).
     function rectsOverlap(r1, r2) {
         return !(r1.right < r2.left || r1.left > r2.right ||
                  r1.bottom < r2.top || r1.top > r2.bottom);
     }
 
     // --- Controls ---
+    // Button and keyboard event listeners for moving the car and restarting the game.
     leftBtn.addEventListener('click', ()=>movePlayer('left'));
     rightBtn.addEventListener('click',()=>movePlayer('right'));
     restartBtn.addEventListener('click', resetGame);
@@ -693,6 +736,7 @@ function attractToCar(itemArray, isUpgrade=false) {
     });
 
     // Touch/Swipe controls for mobile
+    // Allows the player to swipe left/right to move the car on mobile devices.
     let touchStartX = null;
     track.addEventListener('touchstart', e=>{
         if (e.touches.length===1) touchStartX = e.touches[0].clientX;
@@ -708,6 +752,7 @@ function attractToCar(itemArray, isUpgrade=false) {
     });
 
     // Responsive: recalculate lanes on resize
+    // When the window is resized, recalculate lane positions and redraw dividers.
     window.addEventListener('resize', ()=>{
         setCarPosition();
         enemyCars.forEach(ec=>{
@@ -723,6 +768,7 @@ function attractToCar(itemArray, isUpgrade=false) {
     });
 
     // --- Upgrade logic ---
+    // Each upgrade button applies a different effect to the player or game.
     upgradeBtns.speed.onclick = ()=>{
         carSpeed *= 1.25;
         enemySpeed = 3 * carSpeed;
@@ -762,6 +808,7 @@ upgradeBtns.heart.onclick = ()=>{
     requestAnimationFrame(gameLoop);
 };
 
+    // Reset all game variables and state to start a new game.
     function resetGame() {
         document.querySelectorAll('.upgrade').forEach(e=>e.remove());
         upgradeSpawnTimer = 350; // adjust as needed
@@ -801,10 +848,13 @@ upgradeBtns.heart.onclick = ()=>{
 
     
     // --- Start Game ---
+    // When the page loads, start a new game.
     document.addEventListener('DOMContentLoaded', () => {
         resetGame();
     });
     
+// --- Timer logic ---
+// These functions keep track of how long the player survives.
 let time = 0;
 let timerInterval = null;
 
@@ -822,6 +872,7 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
  // --- Heart (life) overlay ---
+ // Draws the heart icons (lives) in the top-left overlay.
     function drawHearts() {
         const overlay = document.getElementById('lives-overlay');
         overlay.innerHTML = '';
@@ -830,6 +881,7 @@ function stopTimer() {
         }
     }
     // --- Heart (life) on track ---
+    // Spawns a heart on the track that the player can collect for an extra life.
     function spawnHeart() {
         const laneIdx = Math.floor(Math.random()*laneCount);
         const heart = document.createElement('div');
@@ -843,6 +895,7 @@ function stopTimer() {
     }
     let heartsOnTrack = [];
     // Move hearts on track
+    // Moves heart objects down the track and removes them if off-screen.
     function moveHearts() {
         heartsOnTrack.forEach(h => {
             h.y += carSpeed;
@@ -857,6 +910,7 @@ function stopTimer() {
         });
     }
     // Heart collision
+    // Checks if the player collects a heart on the track.
     function heartCollision() {
         const playerRect = playerCar.getBoundingClientRect();
         for (let h of heartsOnTrack) {
@@ -871,6 +925,7 @@ function stopTimer() {
     }
 
     // Add life function
+    // Increases the player's lives by one and redraws the hearts overlay.
     function addLife() {
         lives++;
         drawHearts();
