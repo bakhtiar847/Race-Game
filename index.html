@@ -595,7 +595,49 @@ for (let upg of upgrades) {
         moveObjs();
         moveHearts();
         collDetect();
-        spawnObjs();
+    spawnObjs();
+// Spawns enemies, obstacles, boosts, upgrades, and hearts at intervals
+function spawnObjs() {
+    // Enemy spawn
+    if (typeof enemySpawnTimer === 'undefined') enemySpawnTimer = 0;
+    enemySpawnTimer--;
+    if (enemySpawnTimer <= 0) {
+        spawnEnemy();
+        enemySpawnTimer = Math.max(30, 60 - Math.floor(score / 5)); // faster as score increases
+    }
+
+    // Obstacle spawn
+    if (typeof obstacleTimer === 'undefined') obstacleTimer = 0;
+    obstacleTimer--;
+    if (obstacleTimer <= 0) {
+        spawnObstacle();
+        obstacleTimer = 90 + Math.floor(Math.random() * 60);
+    }
+
+    // Boost spawn
+    if (typeof boostTimer === 'undefined') boostTimer = 0;
+    boostTimer--;
+    if (boostTimer <= 0) {
+        spawnBoost();
+        boostTimer = 180 + Math.floor(Math.random() * 120);
+    }
+
+    // Upgrade spawn
+    if (typeof upgradeSpawnTimer === 'undefined') upgradeSpawnTimer = 0;
+    upgradeSpawnTimer--;
+    if (upgradeSpawnTimer <= 0) {
+        spawnUpgrade();
+        upgradeSpawnTimer = 350 + Math.floor(Math.random() * 200);
+    }
+
+    // Heart spawn
+    if (typeof heartSpawnTimer === 'undefined') heartSpawnTimer = 0;
+    heartSpawnTimer--;
+    if (heartSpawnTimer <= 0) {
+        spawnHeart();
+        heartSpawnTimer = 400 + Math.floor(Math.random() * 200);
+    }
+}
         attractToCar(boosts);
         attractToCar(upgrades, true);
         drawHearts();
