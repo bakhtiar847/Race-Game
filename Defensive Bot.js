@@ -1,12 +1,12 @@
 // Defensive Bot Script for Race Game
 
-let botEnabled = false;
+let DefBotEnabled = false;
 try {
     const query = window.location.search.substring(1);
     // Accepts e.g. ?Bot=Def or ?foo=bar&Bot=Def; etc
-    botEnabled = /Bot=Def(;|&|$)/.test(query);
+    DefBotEnabled = /Bot=Def(;|&|$)/.test(query);
 } catch (e) {
-    botEnabled = false;
+    DefBotEnabled = false;
 }
 
 // Helper: Find all objects in a lane ahead of the player
@@ -24,7 +24,7 @@ function isLaneSafe(lane, playerRect) {
 
 // Find preferred lane: upgrade > boost > current lane (if safe)
 function botChooseLane() {
-    if (!botEnabled || !gameRunning || upgradePending) return;
+    if (!DefBotEnabled || !gameRunning || upgradePending) return;
 
     const playerRect = playerCar.getBoundingClientRect();
     let currentLane = playerLane;
@@ -54,7 +54,7 @@ function botChooseLane() {
 
 // Only choose shield if not already shielded; else prefer magnets
 function botUpgradeChoice() {
-    if (!botEnabled || !upgradePending) return;
+    if (!DefBotEnabled || !upgradePending) return;
     if (!shield && upgradeBtns.shield) {
         upgradeBtns.shield.click();
     } else if (upgradeBtns.magnetLeft && !magnetLeft) {
@@ -100,7 +100,7 @@ showUpgradeMenu = function () {
 };
 
 // Expose bot toggle
-window.toggleBot = function(enable) { botEnabled = enable !== false; };
+window.toggleBot = function(enable) { DefBotEnabled = enable !== false; };
 
 // Enable bot by default
-botEnabled = true;
+DefBotEnabled = true;
