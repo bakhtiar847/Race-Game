@@ -157,11 +157,15 @@
         }
         .upgrade {
     position: absolute; width: 38px; height: 38px;
-    background-image: url('Upgrade.png'); /* Fix case sensitivity */
+    background: radial-gradient(circle at 30% 30%, #ffe066 70%, #ffd700 100%, #bfa100 100%);
     border-radius: 50%;
     box-shadow: 0 0 16px 4px #ffe60099, 0 3px 8px #0007;
-    border: 2px solid #fff;
+    border: 2px solid #fff7;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
 }
         #game-over.show, #upgrade-choice.show { display: flex; }
         .shield .body {
@@ -212,7 +216,10 @@
 -->
 <div id="game-container">
     <!-- Score display -->
-    <div id="score">Score: <span id="score-val">0</span> | Coins: <span id="coin-val">0</span></div>
+    <div id="score">Score: <span id="score-val">0</span> | Coins: <span id="coin-val">0</span>
+        <button id="open-shop-btn" class="btn" style="margin-left:16px; padding:4px 18px; font-size:1em;">Open Shop</button>
+        <button id="pause-btn" class="btn" style="margin-left:8px; padding:4px 18px; font-size:1em;">Pause</button>
+    </div>
     <!-- Hearts (lives) overlay -->
     <div id="lives-overlay" style="position:absolute;top:10px;left:10px;z-index:20;"></div>
     <!-- Timer display -->
@@ -238,7 +245,7 @@
             <button id="upgrade-magnet-left">Magnet Left</button>
             <button id="upgrade-magnet-right">Magnet Right</button>
             <button id="upgrade-heart">+1 Heart</button>
-            <button id="upgrade-store">Store as Coin</button>
+            <button id="close-shop-btn">Close</button>
         </div>
     </div>
     <!-- Controls for left/right movement (for mobile and desktop) -->
@@ -265,10 +272,13 @@
         magnetLeft: document.getElementById('upgrade-magnet-left'),
         magnetRight: document.getElementById('upgrade-magnet-right'),
         heart: document.getElementById('upgrade-heart'),
-        store: document.getElementById('upgrade-store')
+        close: document.getElementById('close-shop-btn')
     };
+    const openShopBtn = document.getElementById('open-shop-btn');
+    const pauseBtn = document.getElementById('pause-btn');
     let coins = 0;
-    // ...existing code...
+    let shopOpen = false;
+    let paused = false;
 
     // Lane calculation
     // Returns an array of x-positions for each lane, based on the track width and number of lanes.
@@ -422,6 +432,8 @@ function spawnUpgrade() {
     upg.style.left = (lanes()[laneIdx] - 19) + 'px';
     upg.style.top = '-40px';
     upg.dataset.lane = laneIdx;
+    // Gold coin SVG
+    upg.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#ffd700" stroke="#bfa100" stroke-width="3"/><circle cx="16" cy="16" r="9" fill="#fff8b0" opacity="0.5"/><text x="16" y="22" text-anchor="middle" font-size="16" font-family="Arial" fill="#bfa100" font-weight="bold">$</text></svg>`;
     track.appendChild(upg);
     upgrades.push({el:upg, lane:laneIdx, y:-40});
 }
@@ -456,11 +468,16 @@ if (dirClass) {
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
         upgradePending = true;
+        shopOpen = true;
+        paused = true;
     }
     // Hide the upgrade menu overlay.
     function hideUpgradeMenu() {
         upgradeMenu.classList.remove('show');
         upgradePending = false;
+        shopOpen = false;
+        paused = false;
+        if (gameRunning) requestAnimationFrame(gameLoop);
     }
 // Move all game objects (enemies, obstacles, boosts, upgrades, hearts) and animate the track.
 function moveObjs(){
@@ -590,8 +607,12 @@ for (let upg of upgrades) {
     if (rectsOverlap(playerRect, upgRect)) {
         upg.el.remove();
         upgrades = upgrades.filter(u=>u!==upg);
-        showUpgradeMenu();
-        break; // only one at a time
+        coins++;
+        updateCoins();
+        if (coins > 1) {
+            showUpgradeMenu();
+        }
+        break;
     }
 }
         // Heart collision
@@ -610,10 +631,7 @@ for (let upg of upgrades) {
     // --- Game loop ---
     // This function runs every animation frame while the game is running.
     function gameLoop() {
-        // Check if game is running
-        if (!gameRunning) return;
-        
-        // Boost timer
+        if (!gameRunning || paused || shopOpen) return;
         if (boostActive) {
             boostTimeLeft--;
             if (boostTimeLeft <= 0) {
@@ -624,111 +642,36 @@ for (let upg of upgrades) {
                 enemySpeed = 3 * carSpeed;
             }
         }
-    
-
         moveObjs();
         moveHearts();
         collDetect();
-    spawnObjs();
-// Spawns enemies, obstacles, boosts, upgrades, and hearts at intervals
-// Each type of object has its own timer for spawning.
-function spawnObjs() {
-    // Enemy spawn
-    if (typeof enemySpawnTimer === 'undefined') enemySpawnTimer = 0;
-    enemySpawnTimer--;
-    if (enemySpawnTimer <= 0) {
-        spawnEnemy();
-        enemySpawnTimer = Math.max(30, 60 - Math.floor(score / 5)); // faster as score increases
+        spawnObjs();
+        attractToCar(boosts);
+        attractToCar(upgrades, true);
+        drawHearts();
+        requestAnimationFrame(gameLoop);
     }
-
-    // Obstacle spawn
-    if (typeof obstacleTimer === 'undefined') obstacleTimer = 0;
-    obstacleTimer--;
-    if (obstacleTimer <= 0) {
-        spawnObstacle();
-        obstacleTimer = 90 + Math.floor(Math.random() * 60);
-    }
-
-    // Boost spawn
-    if (typeof boostTimer === 'undefined') boostTimer = 0;
-    boostTimer--;
-    if (boostTimer <= 0) {
-        spawnBoost();
-        boostTimer = 180 + Math.floor(Math.random() * 120);
-    }
-
-    // Upgrade spawn
-    if (typeof upgradeSpawnTimer === 'undefined') upgradeSpawnTimer = 0;
-    upgradeSpawnTimer--;
-    if (upgradeSpawnTimer <= 0) {
-        spawnUpgrade();
-        upgradeSpawnTimer = 350 + Math.floor(Math.random() * 200);
-    }
-
-    // Heart spawn
-    if (typeof heartSpawnTimer === 'undefined') heartSpawnTimer = 0;
-    heartSpawnTimer--;
-    if (heartSpawnTimer <= 0) {
-        spawnHeart();
-        heartSpawnTimer = 400 + Math.floor(Math.random() * 200);
-    }
-}
-    attractToCar(boosts); // Magnet effect for boosts
-    attractToCar(upgrades, true); // Magnet effect for upgrades
-    drawHearts(); // Draw hearts (lives) overlay
-    requestAnimationFrame(gameLoop); // Continue the game loop
-    }
-
-        // Magnet Attraction Logic
-        // If magnet upgrades are active, move boosts/upgrades toward the player's lane.
-function attractToCar(itemArray, isUpgrade=false) {
-    itemArray.forEach(item => {
-        const carLane = playerLane;
-        if (magnetLeft && item.lane < carLane) {
-            // Move right by 1 lane if not already next to car
-            if (item.lane < laneCount-1 && item.lane + 1 <= carLane) {
-                item.lane += 1;
-                let offset = isUpgrade ? -19 : -19; // match spawn offsets
-                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
-            }
-        }
-        if (magnetRight && item.lane > carLane) {
-            // Move left by 1 lane if not already next to car
-            if (item.lane > 0 && item.lane - 1 >= carLane) {
-                item.lane -= 1;
-                let offset = isUpgrade ? -19 : -19;
-                item.el.style.left = (lanes()[item.lane] + offset) + 'px';
-            }
+    // Open shop button logic
+    openShopBtn.addEventListener('click', () => {
+        if (!shopOpen && coins > 0) {
+            showUpgradeMenu();
         }
     });
-}
-    
-    // End the game: stop timer, show game over overlay, reset car visuals.
-    function endGame() {
-        gameRunning = false;
-        stopTimer();
-        gameOverScreen.classList.add('show');
-        playerCar.querySelector('.body').style.boxShadow = "";
-        playerCar.querySelector('.body').style.outline = "";
-    }
-
-    // Helper function: returns true if two rectangles overlap (collision detection).
-    function rectsOverlap(r1, r2) {
-        return !(r1.right < r2.left || r1.left > r2.right ||
-                 r1.bottom < r2.top || r1.top > r2.bottom);
-    }
-
-    // --- Controls ---
-    // Button and keyboard event listeners for moving the car and restarting the game.
-    leftBtn.addEventListener('click', ()=>movePlayer('left'));
-    rightBtn.addEventListener('click',()=>movePlayer('right'));
-    restartBtn.addEventListener('click', resetGame);
+    // Pause button logic
+    pauseBtn.addEventListener('click', () => {
+        paused = !paused;
+        if (!paused && !shopOpen) requestAnimationFrame(gameLoop);
+    });
 
     // --- Coin usage ---
-    // Allow user to spend coins to activate upgrades at any time
     document.addEventListener('keydown', e => {
-        if (!gameRunning || upgradePending) return;
-        // 1-6 keys for upgrades if coins > 0
+        if (!gameRunning) return;
+        if (e.key === 'p' || e.key === 'P') {
+            paused = !paused;
+            if (!paused && !shopOpen) requestAnimationFrame(gameLoop);
+            return;
+        }
+        if (paused || shopOpen || upgradePending) return;
         if (coins > 0) {
             if (e.key === '1') { carSpeed *= 1.25; enemySpeed = 3 * carSpeed; coins--; updateCoins(); }
             if (e.key === '2') { carSize *= 0.8; setCarSize(carSize); coins--; updateCoins(); }
@@ -736,6 +679,7 @@ function attractToCar(itemArray, isUpgrade=false) {
             if (e.key === '4') { magnetLeft = true; coins--; updateCoins(); }
             if (e.key === '5') { magnetRight = true; coins--; updateCoins(); }
             if (e.key === '6') { addLife(); coins--; updateCoins(); }
+            if (coins === 0 && shopOpen) hideUpgradeMenu();
         }
     });
 
@@ -783,47 +727,45 @@ function attractToCar(itemArray, isUpgrade=false) {
     upgradeBtns.speed.onclick = ()=>{
         carSpeed *= 1.25;
         enemySpeed = 3 * carSpeed;
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        coins = Math.max(0, coins - 1);
+        updateCoins();
+        if (coins === 0) hideUpgradeMenu();
     };
     upgradeBtns.size.onclick = ()=>{
         carSize *= 0.8;
         setCarSize(carSize);
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        coins = Math.max(0, coins - 1);
+        updateCoins();
+        if (coins === 0) hideUpgradeMenu();
     };
     upgradeBtns.shield.onclick = ()=>{
         shield = true;
         playerCar.classList.add('shield');
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        coins = Math.max(0, coins - 1);
+        updateCoins();
+        if (coins === 0) hideUpgradeMenu();
     };
     upgradeBtns.magnetLeft.onclick = ()=>{
         magnetLeft = true;
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        coins = Math.max(0, coins - 1);
+        updateCoins();
+        if (coins === 0) hideUpgradeMenu();
     };
     upgradeBtns.magnetRight.onclick = ()=>{
         magnetRight = true;
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        coins = Math.max(0, coins - 1);
+        updateCoins();
+        if (coins === 0) hideUpgradeMenu();
     };
     upgradeBtns.heart.onclick = ()=>{
         addLife();
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
-    };
-    // Store as coin logic
-    upgradeBtns.store.onclick = ()=>{
-        coins++;
+        coins = Math.max(0, coins - 1);
         updateCoins();
-        hideUpgradeMenu();
-        requestAnimationFrame(gameLoop);
+        if (coins === 0) hideUpgradeMenu();
     };
-    // Update coin display
-    function updateCoins() {
-        coinVal.textContent = coins;
-    }
+    upgradeBtns.close.onclick = ()=>{
+        hideUpgradeMenu();
+    };
 
     // Reset all game variables and state to start a new game.
     function resetGame() {
@@ -858,11 +800,13 @@ function attractToCar(itemArray, isUpgrade=false) {
         setCarPosition();
         document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
         gameRunning = true;
-        requestAnimationFrame(gameLoop);
+        shopOpen = false;
+        paused = false;
         magnetLeft = false;
         magnetRight = false;
         createLaneDividers();
         drawHearts();
+        requestAnimationFrame(gameLoop);
     }
 
     
