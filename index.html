@@ -276,6 +276,9 @@
     };
     const openShopBtn = document.getElementById('open-shop-btn');
     const pauseBtn = document.getElementById('pause-btn');
+    // Fix: define missing overlay elements
+    const gameOverScreen = document.getElementById('game-over');
+    const upgradeMenu = document.getElementById('upgrade-choice');
     let coins = 0;
     let shopOpen = false;
     let paused = false;
@@ -772,7 +775,7 @@ for (let upg of upgrades) {
         document.querySelectorAll('.upgrade').forEach(e=>e.remove());
         upgradeSpawnTimer = 350; // adjust as needed
         startTimer();
-        playerLane = 1;
+        playerLane = Math.floor(laneCount / 2); // Start in center lane
         score = 0;
         carSpeed = 1;
         carSize = 1; // should be 1 for normal size
@@ -799,13 +802,13 @@ for (let upg of upgrades) {
         setCarSize(carSize);
         setCarPosition();
         document.querySelectorAll('.car.enemy, .obstacle, .boost').forEach(e=>e.remove());
-        gameRunning = true;
         shopOpen = false;
         paused = false;
         magnetLeft = false;
         magnetRight = false;
         createLaneDividers();
         drawHearts();
+        gameRunning = true;
         requestAnimationFrame(gameLoop);
     }
 
