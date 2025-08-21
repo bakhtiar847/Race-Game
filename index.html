@@ -256,7 +256,83 @@
 </div>
 <!-- Main game logic is below. All game code is in this script tag. -->
 <script>
-    // --- Game variables ---
+    // =============================
+    //      HELPER FUNCTIONS
+    // =============================
+    // Check if two rectangles overlap (collision detection)
+    function rectsOverlap(r1, r2) {
+        return !(
+            r1.right < r2.left ||
+            r1.left > r2.right ||
+            r1.bottom < r2.top ||
+            r1.top > r2.bottom
+        );
+    }
+
+    // Spawn objects (enemies, obstacles, boosts, upgrades, hearts) at intervals
+    function spawnObjs() {
+        // Enemy car spawn
+        if (!enemySpawnTimer || enemySpawnTimer <= 0) {
+            spawnEnemy();
+            enemySpawnTimer = Math.max(30, 60 - Math.floor(score / 2)); // Faster as score increases
+        } else {
+            enemySpawnTimer--;
+        }
+        // Obstacle spawn
+        if (!obstacleTimer || obstacleTimer <= 0) {
+            if (Math.random() < 0.5) spawnObstacle();
+            obstacleTimer = 80 + Math.floor(Math.random() * 40);
+        } else {
+            obstacleTimer--;
+        }
+        // Boost spawn
+        if (!boostTimer || boostTimer <= 0) {
+            if (Math.random() < 0.3) spawnBoost();
+            boostTimer = 180 + Math.floor(Math.random() * 60);
+        } else {
+            boostTimer--;
+        }
+        // Upgrade spawn
+        if (!upgradeSpawnTimer || upgradeSpawnTimer <= 0) {
+            if (Math.random() < 0.2) spawnUpgrade();
+            upgradeSpawnTimer = 350 + Math.floor(Math.random() * 100);
+        } else {
+            upgradeSpawnTimer--;
+        }
+        // Heart spawn
+        if (Math.random() < 0.003) spawnHeart();
+    }
+
+    // Attract objects to the player's car if magnet is active
+    function attractToCar(arr, isUpgrade = false) {
+        if ((!magnetLeft && !magnetRight) && !isUpgrade) return;
+        arr.forEach(obj => {
+            // Only attract if in adjacent lane
+            if (Math.abs(obj.lane - playerLane) === 1) {
+                if ((magnetLeft && obj.lane < playerLane) || (magnetRight && obj.lane > playerLane) || isUpgrade) {
+                    // Move object toward player lane
+                    if (obj.lane < playerLane) obj.lane++;
+                    else if (obj.lane > playerLane) obj.lane--;
+                    obj.el.style.left = (lanes()[obj.lane] - (isUpgrade ? 19 : (obj.el.classList.contains('boost') ? 19 : 20))) + 'px';
+                }
+            }
+        });
+    }
+
+    // End the game and show the game over screen
+    function endGame() {
+        gameRunning = false;
+        stopTimer();
+        gameOverScreen.classList.add('show');
+    }
+
+    // Update the coin display
+    function updateCoins() {
+        coinVal.textContent = coins;
+    }
+    // =============================
+    //      GAME VARIABLES
+    // =============================
     // These variables keep track of the game state, player, enemies, upgrades, etc.
     let lineOffset = 0;
     let upgradeSpawnTimer;
@@ -283,7 +359,9 @@
     let shopOpen = false;
     let paused = false;
 
-    // Lane calculation
+    // =============================
+    //      LANE CALCULATION
+    // =============================
     // Returns an array of x-positions for each lane, based on the track width and number of lanes.
     const laneCount = 10;
     const lanes = () => {
@@ -292,7 +370,9 @@
         return Array.from({length: laneCount}, (_,i)=>spacing/2 + i*spacing);
     };
 
-    // Game state
+    // =============================
+    //      GAME STATE VARIABLES
+    // =============================
     // These variables are used to keep track of the player, score, enemies, obstacles, upgrades, etc.
     let playerLane, score, gameRunning, enemyCars, enemySpeed, enemySpawnTimer, obstacleTimer, boostTimer, upgrades, obstacles, boosts;
     let upgradePending = false;
@@ -300,7 +380,9 @@
     let upgradeEvery = 10, lastUpgradeAt = 0;
     let magnetLeft = false, magnetRight = false;
 
-    // Wheel and car body helpers
+    // =============================
+    //      CAR VISUALS
+    // =============================
     // This function creates the car's DOM structure (body, windows, grill, lights, wheels).
     function makeCarDOM(target, isEnemy=false) {
         target.innerHTML = '';
@@ -336,6 +418,9 @@
     // Call this once to create the player's car appearance.
     makeCarDOM(playerCar);
 
+    // =============================
+    //      PLAYER CAR POSITION
+    // =============================
     // Set the player's car position based on the current lane.
     function setCarPosition() {
         playerCar.style.left = lanes()[playerLane] + 'px';
@@ -351,6 +436,9 @@
         }
     }
 
+    // =============================
+    //      LANE DIVIDERS
+    // =============================
     // Draw vertical lane divider lines on the track.
     function createLaneDividers() {
     // Remove old dividers if any
@@ -366,6 +454,9 @@
     }
 }
 
+    // =============================
+    //      PLAYER MOVEMENT
+    // =============================
     // Move the player's car left or right by changing lanes.
     function movePlayer(dir) {
     if (!gameRunning || upgradePending) return;
@@ -390,6 +481,9 @@
     }
 }
 
+    // =============================
+    //      SPAWN ENEMY CAR
+    // =============================
     // Spawn an enemy car in a random lane at the top of the track.
     function spawnEnemy() {
         const laneIdx = Math.floor(Math.random()*laneCount);
@@ -403,6 +497,9 @@
         enemyCars.push({el:enemy, lane:laneIdx, y:-90});
     }
 
+    // =============================
+    //      SPAWN OBSTACLE
+    // =============================
     // Spawn an obstacle in a random lane at the top of the track.
     function spawnObstacle() {
         const laneIdx = Math.floor(Math.random()*laneCount);
@@ -415,6 +512,9 @@
         obstacles.push({el:obs, lane:laneIdx, y:-40});
     }
 
+    // =============================
+    //      SPAWN BOOST
+    // =============================
     // Spawn a speed boost in a random lane at the top of the track.
     function spawnBoost() {
         const laneIdx = Math.floor(Math.random()*laneCount);
@@ -427,6 +527,9 @@
         boosts.push({el:bst, lane:laneIdx, y:-40});
     }
 
+// =============================
+//      SPAWN UPGRADE
+// =============================
 // Spawn an upgrade in a random lane at the top of the track.
 function spawnUpgrade() {
     const laneIdx = Math.floor(Math.random()*laneCount);
@@ -441,8 +544,10 @@ function spawnUpgrade() {
     upgrades.push({el:upg, lane:laneIdx, y:-40});
 }
 
+// =============================
+//      ENEMY CAR MOVEMENT (AI)
+// =============================
 // Enemy cars randomly change to adjacent lane (not more than once every 700ms)
-// Enemy cars randomly change to adjacent lanes every 700ms.
 setInterval(() => {
     if (!gameRunning) return;
     enemyCars.forEach(ec => {
@@ -467,6 +572,9 @@ if (dirClass) {
     });
 }, 700);
     
+    // =============================
+    //      UPGRADE MENU
+    // =============================
     // Show the upgrade menu overlay.
     function showUpgradeMenu() {
         upgradeMenu.classList.add('show');
@@ -482,6 +590,9 @@ if (dirClass) {
         paused = false;
         if (gameRunning) requestAnimationFrame(gameLoop);
     }
+// =============================
+//      MOVE GAME OBJECTS
+// =============================
 // Move all game objects (enemies, obstacles, boosts, upgrades, hearts) and animate the track.
 function moveObjs(){
 // Move track lane lines to create illusion of motion
@@ -555,7 +666,9 @@ upgrades = upgrades.filter(upg=>{
             return true;
         });
 }
-    // Collision detection
+    // =============================
+    //      COLLISION DETECTION
+    // =============================
     // Check for collisions between the player and other objects.
     function collDetect(){
         const playerRect = playerCar.getBoundingClientRect();
@@ -622,6 +735,9 @@ for (let upg of upgrades) {
         heartCollision();
     }
 
+    // =============================
+    //      LIFE MANAGEMENT
+    // =============================
     // Remove one life and update the display. End the game if no lives remain.
     function removeLife() {
         lives--;
@@ -631,8 +747,12 @@ for (let upg of upgrades) {
         }
     }
 
-    // --- Game loop ---
+    // =============================
+    //      GAME LOOP
+    // =============================
     // This function runs every animation frame while the game is running.
+    // The gameLoop function is called repeatedly using requestAnimationFrame.
+    // It updates all game objects, checks for collisions, and spawns new objects.
     function gameLoop() {
         if (!gameRunning || paused || shopOpen) return;
         if (boostActive) {
@@ -654,6 +774,9 @@ for (let upg of upgrades) {
         drawHearts();
         requestAnimationFrame(gameLoop);
     }
+    // =============================
+    //      SHOP & PAUSE BUTTONS
+    // =============================
     // Open shop button logic
     openShopBtn.addEventListener('click', () => {
         if (!shopOpen && coins > 0) {
@@ -666,7 +789,9 @@ for (let upg of upgrades) {
         if (!paused && !shopOpen) requestAnimationFrame(gameLoop);
     });
 
-    // --- Coin usage ---
+    // =============================
+    //      COIN USAGE (KEYBOARD)
+    // =============================
     document.addEventListener('keydown', e => {
         if (!gameRunning) return;
         if (e.key === 'p' || e.key === 'P') {
@@ -686,14 +811,18 @@ for (let upg of upgrades) {
         }
     });
 
-    // Keyboard controls
+    // =============================
+    //      KEYBOARD CONTROLS
+    // =============================
     window.addEventListener('keydown', e=>{
         if (!gameRunning && e.key === 'Enter') resetGame();
         if (e.key === 'ArrowLeft') movePlayer('left');
         if (e.key === 'ArrowRight') movePlayer('right');
     });
 
-    // Touch/Swipe controls for mobile
+    // =============================
+    //      TOUCH/SWIPE CONTROLS (MOBILE)
+    // =============================
     // Allows the player to swipe left/right to move the car on mobile devices.
     let touchStartX = null;
     track.addEventListener('touchstart', e=>{
@@ -709,7 +838,9 @@ for (let upg of upgrades) {
         touchStartX = null;
     });
 
-    // Responsive: recalculate lanes on resize
+    // =============================
+    //      RESPONSIVE: RECALCULATE LANES ON RESIZE
+    // =============================
     // When the window is resized, recalculate lane positions and redraw dividers.
     window.addEventListener('resize', ()=>{
         setCarPosition();
@@ -725,7 +856,9 @@ for (let upg of upgrades) {
         createLaneDividers();
     });
 
-    // --- Upgrade logic ---
+    // =============================
+    //      UPGRADE BUTTON LOGIC
+    // =============================
     // Each upgrade button applies a different effect to the player or game.
     upgradeBtns.speed.onclick = ()=>{
         carSpeed *= 1.25;
@@ -770,7 +903,12 @@ for (let upg of upgrades) {
         hideUpgradeMenu();
     };
 
+    // =============================
+    //      RESET GAME
+    // =============================
     // Reset all game variables and state to start a new game.
+    // This function is called at the start and when restarting the game.
+    // It sets all variables to their initial values and prepares the game for play.
     function resetGame() {
         document.querySelectorAll('.upgrade').forEach(e=>e.remove());
         upgradeSpawnTimer = 350; // adjust as needed
@@ -813,18 +951,22 @@ for (let upg of upgrades) {
     }
 
     
-    // --- Start Game ---
+    // =============================
+    //      START GAME ON PAGE LOAD
+    // =============================
     // When the page loads, start a new game.
     document.addEventListener('DOMContentLoaded', () => {
         resetGame();
     });
     
-// --- Timer logic ---
+// =============================
+//      TIMER LOGIC
+// =============================
 // These functions keep track of how long the player survives.
 let time = 0;
 let timerInterval = null;
 
-// Call this function to start the timer
+// Call this function to start the timer when a new game begins.
 function startTimer() {
     time = 0;
     timerInterval = setInterval(() => {
@@ -833,11 +975,13 @@ function startTimer() {
     }, 1000);
 }
 
-// Call this function to stop the timer
+// Call this function to stop the timer (e.g., when the game ends).
 function stopTimer() {
     clearInterval(timerInterval);
 }
- // --- Heart (life) overlay ---
+ // =============================
+ //      HEART (LIFE) OVERLAY
+ // =============================
  // Draws the heart icons (lives) in the top-left overlay.
     function drawHearts() {
         const overlay = document.getElementById('lives-overlay');
@@ -846,7 +990,9 @@ function stopTimer() {
             overlay.innerHTML += `<span class="heart"><svg viewBox='0 0 32 32'><path d='M16 29s-11-7.6-11-15.2C5 7.6 9.6 4 16 10.2 22.4 4 27 7.6 27 13.8 27 21.4 16 29 16 29z' fill='#e33' stroke='#fff' stroke-width='2'/></svg></span>`;
         }
     }
-    // --- Heart (life) on track ---
+    // =============================
+    //      HEART (LIFE) ON TRACK
+    // =============================
     // Spawns a heart on the track that the player can collect for an extra life.
     function spawnHeart() {
         const laneIdx = Math.floor(Math.random()*laneCount);
@@ -892,6 +1038,7 @@ function stopTimer() {
 
     // Add life function
     // Increases the player's lives by one and redraws the hearts overlay.
+    // Call this when the player collects a heart or gets a heart upgrade.
     function addLife() {
         lives++;
         drawHearts();
