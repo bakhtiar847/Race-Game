@@ -212,7 +212,7 @@
 -->
 <div id="game-container">
     <!-- Score display -->
-    <div id="score">Score: <span id="score-val">0</span></div>
+    <div id="score">Score: <span id="score-val">0</span> | Coins: <span id="coin-val">0</span></div>
     <!-- Hearts (lives) overlay -->
     <div id="lives-overlay" style="position:absolute;top:10px;left:10px;z-index:20;"></div>
     <!-- Timer display -->
@@ -238,6 +238,7 @@
             <button id="upgrade-magnet-left">Magnet Left</button>
             <button id="upgrade-magnet-right">Magnet Right</button>
             <button id="upgrade-heart">+1 Heart</button>
+            <button id="upgrade-store">Store as Coin</button>
         </div>
     </div>
     <!-- Controls for left/right movement (for mobile and desktop) -->
@@ -256,16 +257,18 @@
     const track = document.getElementById('track');
     const playerCar = document.getElementById('player-car');
     const scoreVal = document.getElementById('score-val');
-    const gameOverScreen = document.getElementById('game-over');
-    const restartBtn = document.getElementById('restart-btn');
-    const leftBtn = document.getElementById('left-btn');
-    const rightBtn = document.getElementById('right-btn');
-    const upgradeMenu = document.getElementById('upgrade-choice');
+    const coinVal = document.getElementById('coin-val');
     const upgradeBtns = {
         speed: document.getElementById('upgrade-speed'),
         size: document.getElementById('upgrade-size'),
-        shield: document.getElementById('upgrade-shield')
+        shield: document.getElementById('upgrade-shield'),
+        magnetLeft: document.getElementById('upgrade-magnet-left'),
+        magnetRight: document.getElementById('upgrade-magnet-right'),
+        heart: document.getElementById('upgrade-heart'),
+        store: document.getElementById('upgrade-store')
     };
+    let coins = 0;
+    // ...existing code...
 
     // Lane calculation
     // Returns an array of x-positions for each lane, based on the track width and number of lanes.
@@ -721,6 +724,21 @@ function attractToCar(itemArray, isUpgrade=false) {
     rightBtn.addEventListener('click',()=>movePlayer('right'));
     restartBtn.addEventListener('click', resetGame);
 
+    // --- Coin usage ---
+    // Allow user to spend coins to activate upgrades at any time
+    document.addEventListener('keydown', e => {
+        if (!gameRunning || upgradePending) return;
+        // 1-6 keys for upgrades if coins > 0
+        if (coins > 0) {
+            if (e.key === '1') { carSpeed *= 1.25; enemySpeed = 3 * carSpeed; coins--; updateCoins(); }
+            if (e.key === '2') { carSize *= 0.8; setCarSize(carSize); coins--; updateCoins(); }
+            if (e.key === '3') { shield = true; playerCar.classList.add('shield'); coins--; updateCoins(); }
+            if (e.key === '4') { magnetLeft = true; coins--; updateCoins(); }
+            if (e.key === '5') { magnetRight = true; coins--; updateCoins(); }
+            if (e.key === '6') { addLife(); coins--; updateCoins(); }
+        }
+    });
+
     // Keyboard controls
     window.addEventListener('keydown', e=>{
         if (!gameRunning && e.key === 'Enter') resetGame();
@@ -780,26 +798,32 @@ function attractToCar(itemArray, isUpgrade=false) {
         hideUpgradeMenu();
         requestAnimationFrame(gameLoop);
     };
-    upgradeBtns.magnetLeft = document.getElementById('upgrade-magnet-left');
-upgradeBtns.magnetRight = document.getElementById('upgrade-magnet-right');
-upgradeBtns.heart = document.getElementById('upgrade-heart');
-
-upgradeBtns.magnetLeft.onclick = ()=>{
-    magnetLeft = true;
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
-upgradeBtns.magnetRight.onclick = ()=>{
-    magnetRight = true;
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
-// Add heart upgrade button logic
-upgradeBtns.heart.onclick = ()=>{
-    addLife();
-    hideUpgradeMenu();
-    requestAnimationFrame(gameLoop);
-};
+    upgradeBtns.magnetLeft.onclick = ()=>{
+        magnetLeft = true;
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    upgradeBtns.magnetRight.onclick = ()=>{
+        magnetRight = true;
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    upgradeBtns.heart.onclick = ()=>{
+        addLife();
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    // Store as coin logic
+    upgradeBtns.store.onclick = ()=>{
+        coins++;
+        updateCoins();
+        hideUpgradeMenu();
+        requestAnimationFrame(gameLoop);
+    };
+    // Update coin display
+    function updateCoins() {
+        coinVal.textContent = coins;
+    }
 
     // Reset all game variables and state to start a new game.
     function resetGame() {
@@ -824,6 +848,8 @@ upgradeBtns.heart.onclick = ()=>{
         boosts = [];
         lives = 3; // Reset lives on game restart
         scoreVal.textContent = score;
+        coins = 0;
+        updateCoins();
         gameOverScreen.classList.remove('show');
         upgradeMenu.classList.remove('show');
         playerCar.classList.remove('shield');
