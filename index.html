@@ -288,36 +288,42 @@
 
     // Spawn objects (enemies, obstacles, boosts, upgrades, hearts) at intervals
     function spawnObjs() {
+        // --- Density adjustment based on track height ---
+        const referenceHeight = 400; // px, original track height
+        const currentHeight = track.offsetHeight || referenceHeight;
+        const densityFactor = currentHeight / referenceHeight;
+
         // Enemy car spawn
         if (!enemySpawnTimer || enemySpawnTimer <= 0) {
             spawnEnemy();
-            enemySpawnTimer = Math.max(30, 60 - Math.floor(score / 2)); // Faster as score increases
+            // Adjust spawn timer by densityFactor
+            enemySpawnTimer = Math.max(30, Math.round((60 - Math.floor(score / 2)) * densityFactor));
         } else {
             enemySpawnTimer--;
         }
         // Obstacle spawn
         if (!obstacleTimer || obstacleTimer <= 0) {
             if (Math.random() < 0.5) spawnObstacle();
-            obstacleTimer = 80 + Math.floor(Math.random() * 40);
+            obstacleTimer = Math.round((80 + Math.random() * 40) * densityFactor);
         } else {
             obstacleTimer--;
         }
         // Boost spawn
         if (!boostTimer || boostTimer <= 0) {
             if (Math.random() < 0.3) spawnBoost();
-            boostTimer = 180 + Math.floor(Math.random() * 60);
+            boostTimer = Math.round((180 + Math.random() * 60) * densityFactor);
         } else {
             boostTimer--;
         }
         // Upgrade spawn
         if (!upgradeSpawnTimer || upgradeSpawnTimer <= 0) {
             if (Math.random() < 0.2) spawnUpgrade();
-            upgradeSpawnTimer = 350 + Math.floor(Math.random() * 100);
+            upgradeSpawnTimer = Math.round((350 + Math.random() * 100) * densityFactor);
         } else {
             upgradeSpawnTimer--;
         }
         // Heart spawn
-        if (Math.random() < 0.003) spawnHeart();
+        if (Math.random() < 0.003 * densityFactor) spawnHeart();
     }
 
     // Attract objects to the player's car if magnet is active
@@ -610,20 +616,25 @@ if (dirClass) {
 // =============================
 //      MOVE GAME OBJECTS
 // =============================
-// Move all game objects (enemies, obstacles, boosts, upgrades, hearts) and animate the track.
-function moveObjs(){
-// Move track lane lines to create illusion of motion
-lineOffset = (lineOffset + carSpeed) % 48;
-// Animate both background layers: dashed center line and side lines
-track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
-    // Animate yellow lane divider dashed lines by shifting their background position
-    document.querySelectorAll('.lane-divider').forEach(divider => {
-        // Move the background position to create a moving dashed effect
-        divider.style.backgroundPositionY = `${lineOffset}px`;
-    });
+    // Move all game objects (enemies, obstacles, boosts, upgrades, hearts) and animate the track.
+    function moveObjs(){
+        // --- Density adjustment based on track height ---
+        const referenceHeight = 400;
+        const currentHeight = track.offsetHeight || referenceHeight;
+        const densityFactor = currentHeight / referenceHeight;
+
+        // Move track lane lines to create illusion of motion
+        lineOffset = (lineOffset + carSpeed) % 48;
+        // Animate both background layers: dashed center line and side lines
+        track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
+        // Animate yellow lane divider dashed lines by shifting their background position
+        document.querySelectorAll('.lane-divider').forEach(divider => {
+            // Move the background position to create a moving dashed effect
+            divider.style.backgroundPositionY = `${lineOffset}px`;
+        });
         // Move enemies
         enemyCars.forEach(ec => {
-            ec.y += enemySpeed;
+            ec.y += enemySpeed * densityFactor;
             ec.el.style.top = ec.y + 'px';
         });
         // Remove off-screen enemies and increment score
@@ -646,7 +657,7 @@ track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
 
         // Move obstacles
         obstacles.forEach(obs => {
-            obs.y += carSpeed;
+            obs.y += carSpeed * densityFactor;
             obs.el.style.top = obs.y + 'px';
         });
         obstacles = obstacles.filter(obs=>{
@@ -657,22 +668,22 @@ track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
             return true;
         });
 
-// Move upgrades
-upgrades.forEach(upg => {
-    upg.y += carSpeed;
-    upg.el.style.top = upg.y + 'px';
-});
-upgrades = upgrades.filter(upg=>{
-    if (upg.y > track.offsetHeight) {
-        upg.el.remove();
-        return false;
-    }
-    return true;
-});
-        
+        // Move upgrades
+        upgrades.forEach(upg => {
+            upg.y += carSpeed * densityFactor;
+            upg.el.style.top = upg.y + 'px';
+        });
+        upgrades = upgrades.filter(upg=>{
+            if (upg.y > track.offsetHeight) {
+                upg.el.remove();
+                return false;
+            }
+            return true;
+        });
+
         // Move boosts
         boosts.forEach(bst => {
-            bst.y += carSpeed;
+            bst.y += carSpeed * densityFactor;
             bst.el.style.top = bst.y + 'px';
         });
         boosts = boosts.filter(bst=>{
@@ -682,7 +693,7 @@ upgrades = upgrades.filter(upg=>{
             }
             return true;
         });
-}
+    }
     // =============================
     //      COLLISION DETECTION
     // =============================
