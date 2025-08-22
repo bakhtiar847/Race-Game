@@ -67,108 +67,55 @@
             box-shadow: 0 8px 20px #0008, 0 1px 0px 4px #2223 inset;
             border: 2.5px solid #fff7;
             overflow: visible;
-            transition: left 0.4s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.4s cubic-bezier(0.3, 0.7, 0.4, 1), filter 0.4s, width 0.4s, height 0.4s, border-radius 0.4s;
         }
         .car .body {
             position: absolute;
             width: 100%; height: 100%;
             background: linear-gradient(160deg, #49f 0%, #1b3d7a 60%, #5af 100%);
             border-radius: 13px 13px 9px 9px;
-            box-shadow: 0 6px 16px #0003, 0 0 0 6px #fff2 inset;
-            /* Add a subtle metallic shine */
-            background-image: linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 60%, transparent 100%);
+            box-shadow: 0 6px 16px #0003;
         }
         .car.enemy .body {
             background: linear-gradient(160deg, #d22 0%, #900 60%, #fe7 100%);
-            box-shadow: 0 8px 24px #9006, 0 0 0 6px #fff2 inset;
-            background-image: linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 60%, transparent 100%);
+            box-shadow: 0 8px 24px #9006;
         }
         .car .window {
             position: absolute;
-            left: 7px; top: 10px;
-            width: 34px; height: 26px;
+            left: 9px; top: 12px;
+            width: 30px; height: 24px;
             background: linear-gradient(145deg, #e7f8ff 65%, #9ad6ff 100%);
-            border-radius: 10px 10px 14px 14px;
-            box-shadow: 0 0 12px #fff7, 0 2px 8px #b0e1ff99 inset;
-            border: 2px solid #b0e1ff;
+            border-radius: 7px 7px 10px 10px;
+            box-shadow: 0 0 8px #fff7;
+            border: 1.5px solid #b0e1ff;
         }
         .car .grill {
             position: absolute;
-            left: 12px; bottom: 7px;
-            width: 24px; height: 10px;
-            background: linear-gradient(90deg, #333 60%, #888 100%);
-            border-radius: 8px 8px 12px 12px;
-            box-shadow: 0 2px 8px #000a;
-            border: 1.5px solid #666;
+            left: 14px; bottom: 7px;
+            width: 20px; height: 8px;
+            background: #222;
+            border-radius: 6px 6px 10px 10px;
+            box-shadow: 0 2px 6px #000a;
+            border: 1px solid #666;
         }
         .car .wheel {
             position: absolute;
-            width: 13px; height: 23px;
-            background: radial-gradient(circle at 60% 40%, #444 60%, #222 100%);
-            border-radius: 8px;
-            box-shadow: 0 2px 7px #000a, 0 0 0 2px #8888 inset;
+            width: 12px; height: 22px;
+            background: linear-gradient(160deg, #232323 60%, #555 100%);
+            border-radius: 7px;
+            box-shadow: 0 2px 5px #000a;
             top: 59px;
         }
-        .car .wheel.left { left: 1px; }
-        .car .wheel.right { right: 1px; }
+        .car .wheel.left { left: 2px; }
+        .car .wheel.right { right: 2px; }
         .car .light {
             position: absolute;
-            width: 8px; height: 10px;
-            background: radial-gradient(circle at 60% 40%, #ffd 70%, #ffb 100%);
-            border-radius: 3px 5px 8px 8px;
+            width: 7px; height: 8px;
+            background: linear-gradient(120deg, #ffd 60%, #ffb 100%);
+            border-radius: 2px 4px 7px 7px;
             top: 4px;
-            filter: drop-shadow(0 0 6px #fff7);
         }
-        .car .light.left { left: 7px; }
-        .car .light.right { right: 7px; }
-        /* Improved: Add side mirrors */
-        .car .mirror {
-            position: absolute;
-            width: 8px; height: 14px;
-            background: linear-gradient(120deg, #b0e1ff 60%, #fff 100%);
-            border-radius: 6px 6px 8px 8px;
-            top: 18px;
-            z-index: 3;
-            box-shadow: 0 0 4px #fff7;
-        }
-        .car .mirror.left { left: -7px; transform: rotate(-18deg); }
-        .car .mirror.right { right: -7px; transform: rotate(18deg); }
-
-        /* Improved: Add hood ornament */
-        .car .hood-ornament {
-            position: absolute;
-            left: 50%; top: 2px;
-            width: 8px; height: 8px;
-            background: radial-gradient(circle, #fff 60%, #ffd700 100%);
-            border-radius: 50%;
-            transform: translateX(-50%);
-            z-index: 4;
-            box-shadow: 0 0 6px #ffd70099;
-        }
-
-        /* Crushed animation for enemy cars */
-        .car.crushed {
-            animation: crushCar 0.7s cubic-bezier(0.7,0.1,0.9,1.2) forwards;
-            filter: grayscale(0.7) brightness(0.7) blur(1px) drop-shadow(0 0 12px #900a);
-        }
-        @keyframes crushCar {
-            0% {
-                transform: translateX(-50%) scale(1,1) rotate(0deg);
-                width: 48px; height: 80px;
-                border-radius: 13px 13px 9px 9px;
-            }
-            60% {
-                transform: translateX(-50%) scale(1.1,0.7) rotate(-6deg);
-                width: 54px; height: 54px;
-                border-radius: 20px 20px 20px 20px;
-            }
-            100% {
-                transform: translateX(-50%) scale(0.7,0.3) rotate(-12deg);
-                width: 36px; height: 24px;
-                border-radius: 24px 24px 24px 24px;
-                opacity: 0.2;
-            }
-        }
+        .car .light.left { left: 8px; }
+        .car .light.right { right: 8px; }
         /* Enemy Car highlights */
         .car.enemy .light {
             background: linear-gradient(120deg, #fbb 60%, #f44 100%);
@@ -443,17 +390,6 @@
         body.className = 'body';
         if(isEnemy) body.classList.add('enemy');
         target.appendChild(body);
-        // Side mirrors
-        const mirrorL = document.createElement('div');
-        mirrorL.className = 'mirror left';
-        body.appendChild(mirrorL);
-        const mirrorR = document.createElement('div');
-        mirrorR.className = 'mirror right';
-        body.appendChild(mirrorR);
-        // Hood ornament
-        const ornament = document.createElement('div');
-        ornament.className = 'hood-ornament';
-        body.appendChild(ornament);
         // Windows
         const windowDiv = document.createElement('div');
         windowDiv.className = 'window';
@@ -741,21 +677,11 @@ upgrades = upgrades.filter(upg=>{
             const enemyRect = ec.el.getBoundingClientRect();
             if (rectsOverlap(playerRect, enemyRect)) {
                 if (shield) {
-                    // Animate crushed effect, then remove
-                    ec.el.classList.add('crushed');
-                    setTimeout(() => {
-                        if (ec.el && ec.el.parentNode) ec.el.remove();
-                    }, 700);
+                    ec.el.remove();
                     enemyCars = enemyCars.filter(e=>e!==ec);
                     shield = false;
                     playerCar.classList.remove('shield');
                 } else {
-                    // Animate crushed effect, then remove
-                    ec.el.classList.add('crushed');
-                    setTimeout(() => {
-                        if (ec.el && ec.el.parentNode) ec.el.remove();
-                    }, 700);
-                    enemyCars = enemyCars.filter(e=>e!==ec);
                     removeLife();
                     return;
                 }
