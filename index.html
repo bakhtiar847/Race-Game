@@ -349,14 +349,33 @@ gameLoop = function() {
 </head>
 <body>
 <!--
-    --- Game Container ---
-    This is the main wrapper for the game, containing the score, timer, track, overlays, and controls.
+        --- Controls Pop-up ---
+        This overlay lists all game controls and can be closed by the user.
 -->
+<div id="controls-popup" style="display:none; position:fixed; left:0; top:0; right:0; bottom:0; background:rgba(0,0,0,0.88); color:#fff; z-index:1000; align-items:center; justify-content:center; flex-direction:column; font-size:1.15em;">
+    <div style="background:#222; border-radius:12px; padding:32px 28px; max-width:95vw; width:350px; box-shadow:0 8px 32px #000b; display:flex; flex-direction:column; align-items:center;">
+        <h2 style="margin-top:0;">Game Controls</h2>
+        <ul style="text-align:left; margin-bottom:18px;">
+            <li><b>← / →</b> — Move Left / Right</li>
+            <li><b>↑</b> — Accelerate</li>
+            <li><b>↓</b> — Brake</li>
+            <li><b>Space</b> — Pause / Resume</li>
+            <li><b>P</b> — Parking Brake</li>
+            <li><b>B</b> — Parking Brake (alt)</li>
+            <li><b>E</b> — Toggle Engine</li>
+            <li><b>U</b> — Open Upgrade Menu</li>
+            <li><b>1-6</b> — Use Upgrades (if coins)</li>
+            <li><b>Mouse/Touch</b> — On-screen buttons & swipe</li>
+        </ul>
+        <button id="close-controls-popup" class="btn" style="margin-top:8px;">Close</button>
+    </div>
+</div>
 <div id="game-container">
     <!-- Score display -->
     <div id="score">Score: <span id="score-val">0</span> | Coins: <span id="coin-val">0</span>
-        <button id="open-shop-btn" class="btn" style="margin-left:16px; padding:4px 18px; font-size:1em;">Open Shop</button>
-        <button id="pause-btn" class="btn" style="margin-left:8px; padding:4px 18px; font-size:1em;">Pause</button>
+    <button id="open-shop-btn" class="btn" style="margin-left:16px; padding:4px 18px; font-size:1em;">Open Shop</button>
+    <button id="pause-btn" class="btn" style="margin-left:8px; padding:4px 18px; font-size:1em;">Pause</button>
+    <button id="controls-btn" class="btn" style="margin-left:8px; padding:4px 18px; font-size:1em;">Controls</button>
     </div>
     <!-- Hearts (lives) overlay -->
     <div id="lives-overlay" style="position:absolute;top:10px;left:10px;z-index:20;"></div>
@@ -398,6 +417,24 @@ gameLoop = function() {
 </div>
 <!-- Main game logic is below. All game code is in this script tag. -->
 <script>
+    // =============================
+    //      CONTROLS POPUP LOGIC
+    // =============================
+    const controlsPopup = document.getElementById('controls-popup');
+    const controlsBtn = document.getElementById('controls-btn');
+    const closeControlsPopup = document.getElementById('close-controls-popup');
+    controlsBtn.addEventListener('click', () => {
+        controlsPopup.style.display = 'flex';
+    });
+    closeControlsPopup.addEventListener('click', () => {
+        controlsPopup.style.display = 'none';
+    });
+    // Optional: ESC key closes controls popup
+    window.addEventListener('keydown', e => {
+        if (controlsPopup.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+            controlsPopup.style.display = 'none';
+        }
+    });
     // =============================
     //      RESTART BUTTON HANDLER
     // =============================
