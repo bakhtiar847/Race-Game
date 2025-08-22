@@ -267,6 +267,8 @@
     </div>
     <!-- Controls for left/right movement (for mobile and desktop) -->
     <div id="controls">
+        <button class="btn" id="engine-btn">Stop Engine</button>
+        <button class="btn" id="park-btn">Parking Brake</button>
         <button class="btn" id="brake-btn">&#8595; Brake</button>
         <button class="btn" id="left-btn">&#8592; Left</button>
         <button class="btn" id="right-btn">Right &#8594;</button>
@@ -411,6 +413,8 @@
     let upgradePending = false;
     let carSpeed = 1, carSize = 4, shield = true, boostActive = false, boostTimeLeft = 0;
     let maxSpeed = 6;
+    let engineOn = true;
+    let parkingBrake = false;
     let upgradeEvery = 10, lastUpgradeAt = 0;
     let magnetLeft = false, magnetRight = false;
 
@@ -1050,29 +1054,70 @@ for (let upg of upgrades) {
     //      ACCELERATE & BRAKE
     // =============================
     function acceleratePlayer() {
-        // Clamp max speed
+        if (!engineOn || parkingBrake) return;
         if (carSpeed < maxSpeed) {
             carSpeed += 0.3;
             if (carSpeed > maxSpeed) carSpeed = maxSpeed;
             enemySpeed = 3 * carSpeed;
-            // Visual feedback
             playerCar.querySelector('.body').style.boxShadow = '0 0 24px 10px #0af, 0 0 36px 18px #0af7 inset';
             setTimeout(() => { playerCar.querySelector('.body').style.boxShadow = ''; }, 200);
         }
     }
 
     function brakePlayer() {
-        // Clamp min speed
+        if (!engineOn || parkingBrake) return;
         let minSpeed = 0.7;
         if (carSpeed > minSpeed) {
             carSpeed -= 0.3;
             if (carSpeed < minSpeed) carSpeed = minSpeed;
             enemySpeed = 3 * carSpeed;
-            // Visual feedback
             playerCar.querySelector('.body').style.boxShadow = '0 0 24px 10px #fa0, 0 0 36px 18px #fa07 inset';
             setTimeout(() => { playerCar.querySelector('.body').style.boxShadow = ''; }, 200);
         }
     }
+// =============================
+//      ENGINE & PARKING BRAKE BUTTONS
+// =============================
+const engineBtn = document.getElementById('engine-btn');
+const parkBtn = document.getElementById('park-btn');
+
+engineBtn.addEventListener('click', () => {
+    engineOn = !engineOn;
+    if (!engineOn) {
+        engineBtn.textContent = 'Start Engine';
+        // Optionally, slow to stop
+        carSpeed = 0;
+        enemySpeed = 0;
+        playerCar.querySelector('.body').style.boxShadow = '0 0 24px 10px #888, 0 0 36px 18px #8887 inset';
+    } else {
+        engineBtn.textContent = 'Stop Engine';
+        carSpeed = 1;
+        enemySpeed = 3;
+        playerCar.querySelector('.body').style.boxShadow = '';
+    }
+});
+
+parkBtn.addEventListener('click', () => {
+    parkingBrake = !parkingBrake;
+    if (parkingBrake) {
+        parkBtn.textContent = 'Release Brake';
+        carSpeed = 0;
+        enemySpeed = 3 * carSpeed;
+        playerCar.querySelector('.body').style.boxShadow = '0 0 24px 10px #f44, 0 0 36px 18px #f447 inset';
+    } else {
+        parkBtn.textContent = 'Parking Brake';
+        playerCar.querySelector('.body').style.boxShadow = '';
+    }
+});
+// Keyboard shortcuts for engine and parking brake
+window.addEventListener('keydown', e => {
+    if (e.key === 'e' || e.key === 'E') {
+        engineBtn.click();
+    }
+    if (e.key === 'b' || e.key === 'B') {
+        parkBtn.click();
+    }
+});
     // =============================
     //      ACCEL/BRAKE BUTTONS (MOBILE)
     // =============================
