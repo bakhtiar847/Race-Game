@@ -776,14 +776,13 @@ function spawnUpgrade() {
                         }
                     }
                     if (!moved) {
-                        if (Math.random() < 0.5) {
-                            ec.el.style.transition = 'all 0.5s cubic-bezier(0.3,0.7,0.4,1)';
-                            ec.el.style.left = (ec.lane === 0 ? -60 : track.offsetWidth + 60) + 'px';
-                            setTimeout(() => { ec.el.remove(); }, 600);
-                            enemyCars[idx]._toRemove = true;
-                        } else {
-                            obs.el.style.height = (parseInt(obs.el.style.height) + 30 || 70) + 'px';
-                        }
+                        // Crash effect: show explosion, fade out, then remove car
+                        ec.el.style.transition = 'all 0.5s cubic-bezier(0.3,0.7,0.4,1)';
+                        ec.el.style.boxShadow = '0 0 32px 16px #ff0, 0 0 64px 32px #f00, 0 0 80px 40px #fff8';
+                        ec.el.style.opacity = '0.2';
+                        ec.el.style.transform += ' scale(1.3) rotate(-18deg)';
+                        setTimeout(() => { ec.el.remove(); }, 500);
+                        enemyCars[idx]._toRemove = true;
                     }
                     break;
                 }
