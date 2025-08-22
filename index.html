@@ -299,38 +299,39 @@
         const referenceHeight = 400; // px, original track height
         const currentHeight = track.offsetHeight || referenceHeight;
         const densityFactor = currentHeight / referenceHeight;
+        // To keep density consistent, divide spawn timers by densityFactor
+        // (i.e., spawn more frequently on larger tracks)
 
         // Enemy car spawn
         if (!enemySpawnTimer || enemySpawnTimer <= 0) {
             spawnEnemy();
-            // Adjust spawn timer by densityFactor
-            enemySpawnTimer = Math.max(30, Math.round((60 - Math.floor(score / 2)) * densityFactor));
+            enemySpawnTimer = Math.max(10, Math.round((60 - Math.floor(score / 2)) / densityFactor));
         } else {
             enemySpawnTimer--;
         }
         // Obstacle spawn
         if (!obstacleTimer || obstacleTimer <= 0) {
             if (Math.random() < 0.5) spawnObstacle();
-            obstacleTimer = Math.round((80 + Math.random() * 40) * densityFactor);
+            obstacleTimer = Math.max(10, Math.round((80 + Math.random() * 40) / densityFactor));
         } else {
             obstacleTimer--;
         }
         // Boost spawn
         if (!boostTimer || boostTimer <= 0) {
             if (Math.random() < 0.3) spawnBoost();
-            boostTimer = Math.round((180 + Math.random() * 60) * densityFactor);
+            boostTimer = Math.max(10, Math.round((180 + Math.random() * 60) / densityFactor));
         } else {
             boostTimer--;
         }
         // Upgrade spawn
         if (!upgradeSpawnTimer || upgradeSpawnTimer <= 0) {
             if (Math.random() < 0.2) spawnUpgrade();
-            upgradeSpawnTimer = Math.round((350 + Math.random() * 100) * densityFactor);
+            upgradeSpawnTimer = Math.max(10, Math.round((350 + Math.random() * 100) / densityFactor));
         } else {
             upgradeSpawnTimer--;
         }
         // Heart spawn
-        if (Math.random() < 0.003 * densityFactor) spawnHeart();
+        if (Math.random() < 0.003 / densityFactor) spawnHeart();
     }
 
     // Attract objects to the player's car if magnet is active
@@ -629,9 +630,10 @@ if (dirClass) {
         const referenceHeight = 400;
         const currentHeight = track.offsetHeight || referenceHeight;
         const densityFactor = currentHeight / referenceHeight;
+        // To keep density consistent, divide movement by densityFactor
 
         // Move track lane lines to create illusion of motion
-        lineOffset = (lineOffset + carSpeed) % 48;
+        lineOffset = (lineOffset + carSpeed / densityFactor) % 48;
         // Animate both background layers: dashed center line and side lines
         track.style.backgroundPosition = `0 ${lineOffset}px, 0 0`;
         // Animate yellow lane divider dashed lines by shifting their background position
@@ -641,7 +643,7 @@ if (dirClass) {
         });
         // Move enemies
         enemyCars.forEach(ec => {
-            ec.y += enemySpeed * densityFactor;
+            ec.y += enemySpeed / densityFactor;
             ec.el.style.top = ec.y + 'px';
         });
         // Remove off-screen enemies and increment score
@@ -664,7 +666,7 @@ if (dirClass) {
 
         // Move obstacles
         obstacles.forEach(obs => {
-            obs.y += carSpeed * densityFactor;
+            obs.y += carSpeed / densityFactor;
             obs.el.style.top = obs.y + 'px';
         });
         obstacles = obstacles.filter(obs=>{
@@ -677,7 +679,7 @@ if (dirClass) {
 
         // Move upgrades
         upgrades.forEach(upg => {
-            upg.y += carSpeed * densityFactor;
+            upg.y += carSpeed / densityFactor;
             upg.el.style.top = upg.y + 'px';
         });
         upgrades = upgrades.filter(upg=>{
@@ -690,7 +692,7 @@ if (dirClass) {
 
         // Move boosts
         boosts.forEach(bst => {
-            bst.y += carSpeed * densityFactor;
+            bst.y += carSpeed / densityFactor;
             bst.el.style.top = bst.y + 'px';
         });
         boosts = boosts.filter(bst=>{
