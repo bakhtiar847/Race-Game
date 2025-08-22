@@ -575,33 +575,148 @@ function spawnUpgrade() {
     upgrades.push({el:upg, lane:laneIdx, y:-40});
 }
 
-// =============================
-//      ENEMY CAR MOVEMENT (AI)
-// =============================
-// Enemy cars randomly change to adjacent lane (not more than once every 700ms)
-setInterval(() => {
-    if (!gameRunning) return;
-    enemyCars.forEach(ec => {
-        // 30% chance to attempt a lane change
-        if (Math.random() < 0.3) {
-            let possibleLanes = [];
-            if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
-            if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
-            if (possibleLanes.length > 0) {
-                let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
-                let dirClass = '';
-if (newLane < ec.lane) dirClass = 'turn-right';
-if (newLane > ec.lane) dirClass = 'turn-left';
-if (dirClass) {
-    ec.el.classList.add(dirClass);
-    setTimeout(() => ec.el.classList.remove(dirClass), 400); // 400ms matches CSS transition
-}
-                ec.lane = newLane;
-                ec.el.style.left = lanes()[ec.lane] + 'px';
+    // =============================
+    //      ENEMY CAR MOVEMENT (AI) & OBSTACLE INTERACTION
+    // =============================
+    // Enhanced enemy car AI: random speed, parking, sideways driving, U-turns
+    setInterval(() => {
+        if (!gameRunning) return;
+        enemyCars.forEach((ec, idx) => {
+            // Initialize AI state if not present
+            if (!ec.ai) {
+                ec.ai = {
+                    speed: enemySpeed * (0.7 + Math.random() * 1.2),
+                    parked: false,
+                    sideways: false,
+                    uturn: false,
+                    uturnProgress: 0,
+                    parkTimer: 0,
+                    sidewaysTimer: 0,
+                    uturnTimer: 0
+                };
             }
-        }
-    });
-}, 700);
+            // --- U-Turn logic ---
+            if (!ec.ai.uturn && Math.random() < 0.01) {
+                ec.ai.uturn = true;
+                ec.ai.uturnProgress = 0;
+                ec.el.style.transition = 'transform 0.7s cubic-bezier(0.3,0.7,0.4,1)';
+                ec.el.style.transform += ' rotate(180deg)';
+            }
+            if (ec.ai.uturn) {
+                ec.ai.uturnProgress++;
+                // Move up for half, then down for half
+                if (ec.ai.uturnProgress < 20) {
+                    ec.y -= ec.ai.speed * 1.2;
+                } else if (ec.ai.uturnProgress < 40) {
+                    ec.y += ec.ai.speed * 1.2;
+                } else {
+                    ec.ai.uturn = false;
+                    ec.el.style.transform = ec.el.style.transform.replace(' rotate(180deg)', '');
+                }
+                return;
+            }
+            // --- Parking logic ---
+            if (!ec.ai.parked && Math.random() < 0.02) {
+                ec.ai.parked = true;
+                ec.ai.parkTimer = 30 + Math.floor(Math.random() * 40);
+                ec.el.style.opacity = '0.7';
+            }
+            if (ec.ai.parked) {
+                ec.ai.parkTimer--;
+                if (ec.ai.parkTimer <= 0) {
+                    ec.ai.parked = false;
+                    ec.el.style.opacity = '';
+                }
+                return;
+            }
+            // --- Sideways driving logic ---
+            if (!ec.ai.sideways && Math.random() < 0.01) {
+                ec.ai.sideways = true;
+                ec.ai.sidewaysTimer = 20 + Math.floor(Math.random() * 30);
+                ec.el.style.transition = 'transform 0.4s cubic-bezier(0.3,0.7,0.4,1)';
+                ec.el.style.transform += ' rotate(90deg)';
+            }
+            if (ec.ai.sideways) {
+                ec.ai.sidewaysTimer--;
+                // Move sideways (left or right randomly)
+                let dir = Math.random() < 0.5 ? -1 : 1;
+                let newLane = ec.lane + dir;
+                if (newLane >= 0 && newLane < laneCount) {
+                    ec.lane = newLane;
+                    ec.el.style.left = lanes()[ec.lane] + 'px';
+                }
+                if (ec.ai.sidewaysTimer <= 0) {
+                    ec.ai.sideways = false;
+                    ec.el.style.transform = ec.el.style.transform.replace(' rotate(90deg)', '');
+                }
+                return;
+            }
+            // --- Check for collision with obstacles ---
+            let collided = false;
+            for (let obs of obstacles) {
+                const enemyRect = ec.el.getBoundingClientRect();
+                const obsRect = obs.el.getBoundingClientRect();
+                if (rectsOverlap(enemyRect, obsRect)) {
+                    collided = true;
+                    let possibleLanes = [];
+                    if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
+                    if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
+                    let moved = false;
+                    for (let newLane of possibleLanes) {
+                        let laneBlocked = false;
+                        for (let o of obstacles) {
+                            if (o.lane === newLane && Math.abs(o.y - ec.y) < 60) laneBlocked = true;
+                        }
+                        for (let e2 of enemyCars) {
+                            if (e2 !== ec && e2.lane === newLane && Math.abs(e2.y - ec.y) < 60) laneBlocked = true;
+                        }
+                        if (!laneBlocked) {
+                            let dirClass = (newLane < ec.lane) ? 'turn-right' : 'turn-left';
+                            ec.el.classList.add(dirClass);
+                            setTimeout(() => ec.el.classList.remove(dirClass), 400);
+                            ec.lane = newLane;
+                            ec.el.style.left = lanes()[ec.lane] + 'px';
+                            moved = true;
+                            break;
+                        }
+                    }
+                    if (!moved) {
+                        if (Math.random() < 0.5) {
+                            ec.el.style.transition = 'all 0.5s cubic-bezier(0.3,0.7,0.4,1)';
+                            ec.el.style.left = (ec.lane === 0 ? -60 : track.offsetWidth + 60) + 'px';
+                            setTimeout(() => { ec.el.remove(); }, 600);
+                            enemyCars[idx]._toRemove = true;
+                        } else {
+                            obs.el.style.height = (parseInt(obs.el.style.height) + 30 || 70) + 'px';
+                        }
+                    }
+                    break;
+                }
+            }
+            if (!collided) {
+                // 30% chance to attempt a lane change (normal AI)
+                if (Math.random() < 0.3) {
+                    let possibleLanes = [];
+                    if (ec.lane > 0) possibleLanes.push(ec.lane - 1);
+                    if (ec.lane < laneCount - 1) possibleLanes.push(ec.lane + 1);
+                    if (possibleLanes.length > 0) {
+                        let newLane = possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
+                        let dirClass = '';
+                        if (newLane < ec.lane) dirClass = 'turn-right';
+                        if (newLane > ec.lane) dirClass = 'turn-left';
+                        if (dirClass) {
+                            ec.el.classList.add(dirClass);
+                            setTimeout(() => ec.el.classList.remove(dirClass), 400);
+                        }
+                        ec.lane = newLane;
+                        ec.el.style.left = lanes()[ec.lane] + 'px';
+                    }
+                }
+            }
+        });
+        // Remove enemy cars that spun off the road
+        enemyCars = enemyCars.filter(ec => !ec._toRemove);
+    }, 700);
     
     // =============================
     //      UPGRADE MENU
