@@ -1178,6 +1178,9 @@ parkBtn.addEventListener('click', () => {
         playerCar.querySelector('.body').style.boxShadow = '0 0 24px 10px #f44, 0 0 36px 18px #f447 inset';
     } else {
         parkBtn.textContent = 'Parking Brake';
+        // Restore carSpeed to minimum if it was 0
+        if (carSpeed === 0) carSpeed = 1;
+        if (enemySpeed === 0) enemySpeed = 3 * carSpeed;
         playerCar.querySelector('.body').style.boxShadow = '';
     }
 });
