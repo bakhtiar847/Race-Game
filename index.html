@@ -581,7 +581,7 @@ function spawnUpgrade() {
     // Enhanced enemy car AI: random speed, parking, sideways driving, U-turns
     setInterval(() => {
         if (!gameRunning) return;
-        enemyCars.forEach((ec, idx) => {
+    enemyCars.forEach((ec, idx) => {
             // Initialize AI state if not present
             if (!ec.ai) {
                 ec.ai = {
@@ -592,9 +592,35 @@ function spawnUpgrade() {
                     uturnProgress: 0,
                     parkTimer: 0,
                     sidewaysTimer: 0,
-                    uturnTimer: 0
+                    uturnTimer: 0,
+                    speedChangeTimer: Math.floor(30 + Math.random() * 60),
+                    stopped: false,
+                    stopTimer: 0
                 };
             }
+
+            // --- Random speed change logic ---
+            ec.ai.speedChangeTimer--;
+            if (ec.ai.speedChangeTimer <= 0) {
+                // 50% chance to change speed, 20% chance to stop
+                if (Math.random() < 0.2 && !ec.ai.stopped && !ec.ai.parked && !ec.ai.uturn) {
+                    ec.ai.stopped = true;
+                    ec.ai.stopTimer = 20 + Math.floor(Math.random() * 40);
+                    ec.el.style.opacity = '0.5';
+                } else {
+                    ec.ai.speed = enemySpeed * (0.6 + Math.random() * 1.5);
+                }
+                ec.ai.speedChangeTimer = Math.floor(30 + Math.random() * 60);
+            }
+            if (ec.ai.stopped) {
+                ec.ai.stopTimer--;
+                if (ec.ai.stopTimer <= 0) {
+                    ec.ai.stopped = false;
+                    ec.el.style.opacity = '';
+                }
+                return;
+            }
+
             // --- U-Turn logic ---
             if (!ec.ai.uturn && Math.random() < 0.01) {
                 ec.ai.uturn = true;
@@ -693,6 +719,44 @@ function spawnUpgrade() {
                     break;
                 }
             }
+
+            // --- Enemy steals upgrades ---
+            for (let upg of upgrades) {
+                const enemyRect = ec.el.getBoundingClientRect();
+                const upgRect = upg.el.getBoundingClientRect();
+                if (rectsOverlap(enemyRect, upgRect)) {
+                    // Remove upgrade from track and array
+                    upg.el.remove();
+                    upgrades = upgrades.filter(u => u !== upg);
+                    // Visual feedback: flash enemy car
+                    ec.el.style.boxShadow = '0 0 24px 10px #ffd700, 0 0 36px 18px #ffd70077 inset';
+                    setTimeout(() => { ec.el.style.boxShadow = ''; }, 600);
+                    // Optionally: give enemy a temporary speed boost
+                    ec.ai.speed *= 1.5;
+                    setTimeout(() => { ec.ai.speed /= 1.5; }, 1200);
+                }
+            }
+
+            // --- Enemy uses boosts ---
+            for (let bst of boosts) {
+                const enemyRect = ec.el.getBoundingClientRect();
+                const bstRect = bst.el.getBoundingClientRect();
+                if (rectsOverlap(enemyRect, bstRect)) {
+                    // Remove boost from track and array
+                    bst.el.remove();
+                    boosts = boosts.filter(b => b !== bst);
+                    // Visual feedback: green glow
+                    ec.el.style.boxShadow = '0 0 24px 10px #0f7, 0 0 36px 18px #0f7 inset';
+                    // Temporarily double enemy speed
+                    let oldSpeed = ec.ai.speed;
+                    ec.ai.speed = oldSpeed * 2;
+                    setTimeout(() => {
+                        ec.ai.speed = oldSpeed;
+                        ec.el.style.boxShadow = '';
+                    }, 1000);
+                }
+            }
+
             if (!collided) {
                 // 30% chance to attempt a lane change (normal AI)
                 if (Math.random() < 0.3) {
