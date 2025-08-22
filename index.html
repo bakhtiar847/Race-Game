@@ -274,6 +274,13 @@
 <!-- Main game logic is below. All game code is in this script tag. -->
 <script>
     // =============================
+    //      RESTART BUTTON HANDLER
+    // =============================
+    // Make the restart button refresh the page
+    document.getElementById('restart-btn').onclick = function() {
+        window.location.reload();
+    };
+    // =============================
     //      HELPER FUNCTIONS
     // =============================
     // Check if two rectangles overlap (collision detection)
